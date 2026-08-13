@@ -19,8 +19,8 @@ export default function Sidebar() {
         <div className="sidebar">
             <div className="sidebar-logo">
                 <div className="sidebar-logo-icon">🏆</div>
-                <h1>LeetCode<br />Tracking</h1>
-                <p>Student Performance</p>
+                <h1>LEO</h1>
+                <p>Student Tracker</p>
             </div>
 
             <nav className="sidebar-nav">

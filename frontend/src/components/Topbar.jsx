@@ -83,9 +83,9 @@ export default function Topbar({ lastRefresh, onRefreshComplete }) {
         <div className="topbar">
             <div style={{ flex: 1 }}>
                 <div className="topbar-title">
-                    LeetCode Student Tracking
+                    LEO
                     <span className="topbar-subtitle" style={{ marginLeft: 12, fontSize: 12, fontWeight: 400 }}>
-                        Daily Student Performance Dashboard — by Prawinkumar.N
+                        Student Performance Dashboard — by Prawinkumar.N
                     </span>
                 </div>
             </div>

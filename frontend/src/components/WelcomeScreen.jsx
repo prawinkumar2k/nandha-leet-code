@@ -30,7 +30,7 @@ export default function WelcomeScreen({ onComplete }) {
         <div className="welcome-screen">
             <div className="welcome-card">
                 <div className="welcome-logo">🏆</div>
-                <h1 className="welcome-title">Welcome to LeetCode<br />Student Tracking</h1>
+                <h1 className="welcome-title">Welcome to LEO</h1>
                 <p className="welcome-desc">
                     Track LeetCode performance of your students daily.<br />
                     Import your student Excel file to get started, or explore with sample data.

@@ -66,7 +66,7 @@ async function createWindow() {
         height: 900,
         minWidth: 1024,
         minHeight: 700,
-        title: 'LeetCode Student Tracking — by Prawinkumar.N',
+        title: 'LEO — by Prawinkumar.N',
         webPreferences: {
             preload: path.join(__dirname, 'preload.js'),
             nodeIntegration: false,

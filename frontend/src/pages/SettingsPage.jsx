@@ -180,7 +180,7 @@ export default function SettingsPage() {
                     {/* About */}
                     <div className="card">
                         <div className="card-header">
-                            <div className="card-title">ℹ️ About</div>
+                            <div className="card-title">ℹ️ About LEO</div>
                         </div>
                         <div style={{ fontSize: 13, color: 'var(--color-text-secondary)', lineHeight: 2 }}>
                             <div>Developer: <strong style={{ color: 'var(--color-brand)', fontSize: 14 }}>Prawinkumar.N</strong></div>

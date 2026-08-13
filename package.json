@@ -1,7 +1,7 @@
 {
-    "name": "leetcode-student-tracking",
+    "name": "leo-student-tracking",
     "version": "1.0.0",
-    "description": "Desktop LeetCode Student Performance Tracking Software",
+    "description": "LEO - Desktop Student Performance Tracking Software",
     "main": "electron/main.js",
     "scripts": {
         "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\" \"npm run dev:electron\"",
@@ -38,8 +38,8 @@
         "xlsx": "^0.18.5"
     },
     "build": {
-        "appId": "com.leetcode.studenttracking",
-        "productName": "LeetCode Student Tracking",
+        "appId": "com.leo.studenttracking",
+        "productName": "LEO",
         "asar": false,
         "forceCodeSigning": false,
         "directories": {
