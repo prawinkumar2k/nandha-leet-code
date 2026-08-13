@@ -570,13 +570,16 @@ body {
   padding: 8px 16px;
   border-radius: var(--radius-md);
   font-size: 13px;
-  font-weight: 600;
   font-family: var(--font-sans);
   cursor: pointer;
   border: none;
   transition: all var(--transition-fast);
   text-decoration: none;
   white-space: nowrap;
+}
+
+.btn:active:not(:disabled) {
+  transform: translateY(1px) scale(0.97);
 }
 
 .btn:disabled {
@@ -763,11 +766,12 @@ thead th {
 }
 
 thead th:hover {
-  color: var(--color-text-primary);
+  color: #dae3f3;
 }
 
 thead th.sorted {
-  color: var(--color-brand);
+  color: #fbbf24;
+  /* highlight in an amber/yellow tone when sorted so it stands out */
 }
 
 tbody tr {

@@ -138,9 +138,9 @@ export default function Topbar({ lastRefresh, onRefreshComplete }) {
 
                 {/* Refresh Button */}
                 <button
-                    className={`btn ${isRefreshing ? 'btn-secondary' : 'btn-primary'}`}
+                    className="btn btn-primary"
                     onClick={handleRefresh}
-                    style={{ minWidth: 140 }}
+                    style={{ minWidth: 140, background: isRefreshing ? 'rgba(255,255,255,0.1)' : undefined, color: '#ffffff', boxShadow: isRefreshing ? 'none' : undefined }}
                 >
                     {isRefreshing
                         ? <><Loader2 size={14} className="spin-icon" style={{ animation: 'spin 1s linear infinite' }} /> Stop Refresh</>
