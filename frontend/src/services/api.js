@@ -37,6 +37,10 @@ export const insertSampleData = () =>
     axios.get(`${API_BASE}/students/sample/insert`).then(r => r.data);
 
 // ---- Import ----
+export const downloadSampleTemplate = () => {
+    window.location.href = `${API_BASE}/import/template`;
+};
+
 export const importExcel = (formData) =>
     axios.post(`${API_BASE}/import/excel`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' }

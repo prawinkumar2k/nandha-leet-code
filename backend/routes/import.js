@@ -6,6 +6,27 @@ const fs = require('fs');
 const { importExcel } = require('../services/excelService');
 const { getDb } = require('../database/db');
 const { extractUsername } = require('../services/leetcodeService');
+const XLSX = require('xlsx');
+
+router.get('/template', (req, res) => {
+    try {
+        const wb = XLSX.utils.book_new();
+        const wsData = [
+            ['S.No', 'Reg Num', 'Name', 'Department', 'BATCH', 'leetcode_profile_url'],
+            [1, '732224AI001', 'ABINESH T S', 'AIDS', '2028', 'https://leetcode.com/u/Abinesh45/'],
+            [2, '732224CS002', 'JOHN DOE', 'CSE', '2028', 'https://leetcode.com/u/johndoe/']
+        ];
+        const ws = XLSX.utils.aoa_to_sheet(wsData);
+        XLSX.utils.book_append_sheet(wb, ws, 'cons');
+
+        const buffer = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' });
+        res.setHeader('Content-Disposition', 'attachment; filename="LEO_Student_Template.xlsx"');
+        res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        res.send(buffer);
+    } catch (e) {
+        res.status(500).json({ success: false, message: e.message });
+    }
+});
 
 const upload = multer({
     dest: path.join(__dirname, '..', '..', 'data', 'uploads'),
