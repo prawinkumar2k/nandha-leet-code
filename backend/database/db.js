@@ -54,6 +54,7 @@ async function initDb() {
         try {
             db.run(`ALTER TABLE students ADD COLUMN batch TEXT;`);
             console.log('Migration: Added `batch` column to students table');
+            isDirty = true;
             saveDb();
         } catch (e) {
             // Likely already exists, ignore
@@ -65,6 +66,7 @@ async function initDb() {
         const schemaPath = path.join(__dirname, 'schema.sql');
         const schema = fs.readFileSync(schemaPath, 'utf8');
         db.run(schema);
+        isDirty = true;
         saveDb();
         console.log('Created new database at', dbPath);
     }

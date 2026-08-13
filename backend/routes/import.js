@@ -41,13 +41,19 @@ router.post('/excel', upload.single('excel'), async (req, res) => {
 
         try {
             for (const row of validRows) {
-                // If already in DB → skip completely, no update
+                const username = extractUsername(row.leetcode_profile_url);
+
                 if (existingRegNos.has(row.reg_no)) {
-                    skippedStudents++;
+                    // Update instead of skip so any new batch/department data is synced
+                    await db.run(`
+                      UPDATE students 
+                      SET name = ?, department = ?, batch = ?, leetcode_profile_url = ?, leetcode_username = ?, updated_at = CURRENT_TIMESTAMP
+                      WHERE reg_no = ?
+                    `, [row.name, row.department, row.batch, row.leetcode_profile_url, username, row.reg_no]);
+                    skippedStudents++; // Treat as skipped from "new" count, or you could add an updatedStudents counter
                     continue;
                 }
 
-                const username = extractUsername(row.leetcode_profile_url);
                 try {
                     await db.run(`
               INSERT INTO students (sno, reg_no, name, department, batch, leetcode_profile_url, leetcode_username, created_at, updated_at)
