@@ -1,0 +1,145 @@
+const initSqlJs = require('sql.js');
+const path = require('path');
+const fs = require('fs');
+
+let db = null;
+let sqlJs = null;
+let isDirty = false;
+let saveTimeout = null;
+
+function getDbPath() {
+    if (process.env.DB_PATH) return process.env.DB_PATH;
+
+    const dataDir = path.join(__dirname, '..', '..', 'data');
+    if (!fs.existsSync(dataDir)) {
+        fs.mkdirSync(dataDir, { recursive: true });
+    }
+    return path.join(dataDir, 'leetcode_tracking.db');
+}
+
+function scheduleSave() {
+    isDirty = true;
+    if (!saveTimeout) {
+        saveTimeout = setTimeout(() => {
+            saveDb();
+        }, 1000); // Debounce saves by 1 second to batch disk writes
+    }
+}
+
+function saveDb() {
+    if (!db || !isDirty) return;
+    const data = db.export();
+    const buffer = Buffer.from(data);
+    fs.writeFileSync(getDbPath(), buffer);
+    isDirty = false;
+
+    if (saveTimeout) {
+        clearTimeout(saveTimeout);
+        saveTimeout = null;
+    }
+}
+
+async function initDb() {
+    if (db) return dbWrapper;
+
+    sqlJs = await initSqlJs();
+    const dbPath = getDbPath();
+
+    if (fs.existsSync(dbPath)) {
+        const filebuffer = fs.readFileSync(dbPath);
+        db = new sqlJs.Database(filebuffer);
+        console.log('Loaded existing database from', dbPath);
+
+        // Migration: add batch column if missing
+        try {
+            db.run(`ALTER TABLE students ADD COLUMN batch TEXT;`);
+            console.log('Migration: Added `batch` column to students table');
+            saveDb();
+        } catch (e) {
+            // Likely already exists, ignore
+        }
+    } else {
+        db = new sqlJs.Database();
+
+        // Apply schema
+        const schemaPath = path.join(__dirname, 'schema.sql');
+        const schema = fs.readFileSync(schemaPath, 'utf8');
+        db.run(schema);
+        saveDb();
+        console.log('Created new database at', dbPath);
+    }
+
+    return dbWrapper;
+}
+
+// Map bindings
+function prepareParams(params) {
+    if (!params) return [];
+    // Ensure we don't pass undefined, sql.js prefers null
+    return params.map(p => p === undefined ? null : p);
+}
+
+const dbWrapper = {
+    get: async (sql, params) => {
+        const stmt = db.prepare(sql);
+        try {
+            stmt.bind(prepareParams(params));
+            if (stmt.step()) {
+                return stmt.getAsObject();
+            }
+            return undefined;
+        } finally {
+            stmt.free();
+        }
+    },
+    all: async (sql, params) => {
+        const stmt = db.prepare(sql);
+        const results = [];
+        try {
+            stmt.bind(prepareParams(params));
+            while (stmt.step()) {
+                results.push(stmt.getAsObject());
+            }
+            return results;
+        } finally {
+            stmt.free();
+        }
+    },
+    run: async (sql, params) => {
+        // If it's a COMMIT or BEGIN, sql.js handles it or ignores it since it's in-memory single threaded
+        if (sql.trim().toUpperCase().startsWith('BEGIN') || sql.trim().toUpperCase().startsWith('COMMIT') || sql.trim().toUpperCase().startsWith('ROLLBACK')) {
+            db.run(sql);
+            return;
+        }
+
+        if (params && params.length > 0) {
+            db.run(sql, prepareParams(params));
+        } else {
+            db.run(sql);
+        }
+        scheduleSave();
+        return { changes: db.getRowsModified() };
+    }
+};
+
+function getDb() {
+    if (!db) {
+        throw new Error('Database not initialized! Call initDb first.');
+    }
+    return dbWrapper;
+}
+
+async function closeDb() {
+    if (db) {
+        saveDb(); // Force final save
+        db.close();
+        db = null;
+    }
+}
+
+// Ensure we save on exit
+process.on('exit', () => {
+    if (db && isDirty) saveDb();
+});
+
+module.exports = { initDb, getDb, closeDb, getDbPath };

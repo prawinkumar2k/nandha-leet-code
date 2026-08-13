@@ -1,0 +1,69 @@
+{
+    "name": "leetcode-student-tracking",
+    "version": "1.0.0",
+    "description": "Desktop LeetCode Student Performance Tracking Software",
+    "main": "electron/main.js",
+    "scripts": {
+        "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\" \"npm run dev:electron\"",
+        "dev:backend": "node backend/server.js",
+        "dev:frontend": "cd frontend && npm run dev",
+        "dev:electron": "node start-electron.js",
+        "build:frontend": "cd frontend && npm run build",
+        "build": "npm run build:frontend && electron-builder --win",
+        "pack": "npm run build:frontend && electron-builder --win --dir"
+    },
+    "keywords": [
+        "leetcode",
+        "student",
+        "tracking",
+        "electron",
+        "desktop"
+    ],
+    "author": "Prawinkumar.N",
+    "license": "MIT",
+    "devDependencies": {
+        "concurrently": "^8.2.2",
+        "cross-env": "^7.0.3",
+        "electron": "^31.0.0",
+        "electron-builder": "^24.13.3",
+        "wait-on": "^7.2.0"
+    },
+    "dependencies": {
+        "axios": "^1.7.2",
+        "cors": "^2.8.5",
+        "express": "^4.19.2",
+        "multer": "^1.4.5-lts.1",
+        "sql.js": "^1.14.1",
+        "sqlite": "^5.1.1",
+        "xlsx": "^0.18.5"
+    },
+    "build": {
+        "appId": "com.leetcode.studenttracking",
+        "productName": "LeetCode Student Tracking",
+        "asar": false,
+        "forceCodeSigning": false,
+        "directories": {
+            "output": "release"
+        },
+        "files": [
+            "electron/**/*",
+            "backend/**/*",
+            "frontend/dist/**/*",
+            "node_modules/**/*",
+            "package.json"
+        ],
+        "win": {
+            "target": [
+                {
+                    "target": "portable",
+                    "arch": [
+                        "x64"
+                    ]
+                }
+            ]
+        },
+        "extraMetadata": {
+            "main": "electron/main.js"
+        }
+    }
+}
