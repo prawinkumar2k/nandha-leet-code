@@ -205,7 +205,7 @@ router.put('/:id/ban', async (req, res) => {
         const { is_banned } = req.body;
         
         await db.run('UPDATE students SET is_banned = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?', [is_banned ? 1 : 0, req.params.id]);
-        res.json({ success: true, message: \`Student \${is_banned ? 'banned' : 'unbanned'} successfully\` });
+        res.json({ success: true, message: `Student ${is_banned ? 'banned' : 'unbanned'} successfully` });
     } catch (error) {
         res.status(500).json({ success: false, message: error.message });
     }

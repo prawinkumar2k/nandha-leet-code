@@ -17,7 +17,12 @@ app.get('/api/health', (req, res) => {
 });
 
 // Initialize database before routes
+const fs = require('fs');
+const debugLog = require('path').join(require('os').homedir(), 'Desktop', 'backend-debug.log');
+try { fs.writeFileSync(debugLog, 'Starting backend...\n'); } catch (e) {}
+
 initDb().then(() => {
+    try { fs.appendFileSync(debugLog, 'DB initialized successfully\n'); } catch (e) {}
     console.log('DB initialized successfully');
 
     // Routes — registered after DB is ready
@@ -38,6 +43,7 @@ initDb().then(() => {
     }
 
 }).catch(err => {
+    try { fs.appendFileSync(debugLog, 'DB Init failed: ' + (err.stack || err) + '\n'); } catch (e) {}
     console.error('Failed to init DB:', err);
 });
 
