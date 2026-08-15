@@ -19,6 +19,7 @@ router.get('/', async (req, res) => {
         s.leetcode_username,
         s.created_at,
         s.updated_at,
+        COALESCE(s.is_banned, 0) as is_banned,
         COALESCE(ds.date, '') as stat_date,
         COALESCE(ds.total_solved, 0) as total_solved,
         COALESCE(ds.easy_solved, 0) as easy_solved,
@@ -39,6 +40,13 @@ router.get('/', async (req, res) => {
 
         const conditions = [];
         const params = [];
+
+        // Filter banned status
+        if (req.query.banned === 'true') {
+            conditions.push(`COALESCE(s.is_banned, 0) = 1`);
+        } else if (req.query.banned !== 'all') {
+            conditions.push(`COALESCE(s.is_banned, 0) = 0`);
+        }
 
         if (search) {
             conditions.push(`(s.reg_no LIKE ? OR s.name LIKE ? OR s.leetcode_username LIKE ?)`);
@@ -186,6 +194,18 @@ router.put('/:id/manual', async (req, res) => {
         ]);
 
         res.json({ success: true, message: 'Student data updated manually' });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+});
+
+router.put('/:id/ban', async (req, res) => {
+    try {
+        const db = getDb();
+        const { is_banned } = req.body;
+        
+        await db.run('UPDATE students SET is_banned = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?', [is_banned ? 1 : 0, req.params.id]);
+        res.json({ success: true, message: \`Student \${is_banned ? 'banned' : 'unbanned'} successfully\` });
     } catch (error) {
         res.status(500).json({ success: false, message: error.message });
     }

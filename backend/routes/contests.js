@@ -35,62 +35,68 @@ router.get('/', async (req, res) => {
 router.get('/latest', async (req, res) => {
     try {
         const db = getDb();
-        const axios = require('axios');
+        const { date } = req.query;
+        let dateCondition = '';
+        let queryParams = [];
 
-        // Fetch the absolute most recent globally completed contest from LeetCode
-        const pastQuery = `query{ pastContests(pageNo: 1, numPerPage: 5) { data { title startTime } } }`;
-        const response = await axios.post('https://leetcode.com/graphql', { query: pastQuery }, {
-            headers: { 'Content-Type': 'application/json', 'User-Agent': 'Mozilla/5.0' },
-            timeout: 8000
-        });
-
-        const allPast = response.data?.data?.pastContests?.data || [];
-        // weekly only or allow biweekly too? Let's just take the first one
-        const realLatest = allPast[0];
-
-        let targetContestName = realLatest?.title || null;
-        let targetContestDate = realLatest?.startTime
-            ? new Date(realLatest.startTime * 1000).toISOString().split('T')[0]
-            : null;
-
-        // Verify if LeetCode has actually published stats for this global latest contest yet
-        if (targetContestName) {
-            const hasData = await db.get(`SELECT 1 FROM contest_stats WHERE contest_name = ? LIMIT 1`, [targetContestName]);
-            if (!hasData) {
-                targetContestName = null; // Force fallback to latest published in our DB
-            }
+        if (date) {
+            dateCondition = 'AND date(contest_date) <= date(?)';
+            queryParams.push(date);
         }
 
-        // Fallback to database if network fails or LeetCode hasn't published the stats to user profiles yet
-        if (!targetContestName) {
-            const dbLatest = await db.get(`
-                SELECT contest_name, contest_date 
-                FROM contest_stats WHERE contest_date IS NOT NULL 
-                ORDER BY contest_date DESC LIMIT 1
-            `);
-            if (!dbLatest) return res.json({ success: true, data: null, summary: [] });
-            targetContestName = dbLatest.contest_name;
-            targetContestDate = dbLatest.contest_date;
-        }
+        // Get latest Weekly Contest
+        const dbLatestWeekly = await db.get(`
+            SELECT contest_name, contest_date 
+            FROM contest_stats 
+            WHERE contest_date IS NOT NULL 
+              AND contest_name LIKE '%Weekly%' 
+              AND contest_name NOT LIKE '%Biweekly%'
+              ${dateCondition}
+            ORDER BY contest_date DESC LIMIT 1
+        `, ...queryParams);
 
-        const summary = await db.all(`
-          SELECT 
-            s.reg_no,
-            s.name,
-            s.department,
-            cs.problems_solved,
-            cs.contest_total,
-            cs.contest_rating,
-            cs.contest_ranking
-          FROM students s
-          LEFT JOIN contest_stats cs ON s.id = cs.student_id AND cs.contest_name = ?
-          ORDER BY CASE WHEN cs.problems_solved IS NULL THEN 1 ELSE 0 END, cs.problems_solved DESC, cs.contest_rating DESC
-        `, [targetContestName]);
+        // Get latest Biweekly Contest
+        const dbLatestBiweekly = await db.get(`
+            SELECT contest_name, contest_date 
+            FROM contest_stats 
+            WHERE contest_date IS NOT NULL 
+              AND contest_name LIKE '%Biweekly%'
+              ${dateCondition}
+            ORDER BY contest_date DESC LIMIT 1
+        `, ...queryParams);
+
+        // Function to fetch summary for a contest
+        const getSummary = async (contestName) => {
+            if (!contestName) return [];
+            return await db.all(`
+              SELECT 
+                s.reg_no,
+                s.name,
+                s.department,
+                cs.problems_solved,
+                cs.contest_total,
+                cs.contest_rating,
+                cs.contest_ranking
+              FROM students s
+              LEFT JOIN contest_stats cs ON s.id = cs.student_id AND cs.contest_name = ?
+              WHERE COALESCE(s.is_banned, 0) = 0
+              ORDER BY CASE WHEN cs.problems_solved IS NULL THEN 1 ELSE 0 END, cs.problems_solved DESC, cs.contest_rating DESC
+            `, [contestName]);
+        };
+
+        const weeklySummary = dbLatestWeekly ? await getSummary(dbLatestWeekly.contest_name) : [];
+        const biweeklySummary = dbLatestBiweekly ? await getSummary(dbLatestBiweekly.contest_name) : [];
 
         res.json({
             success: true,
-            contest: { contest_name: targetContestName, contest_date: targetContestDate },
-            data: summary
+            weekly: {
+                contest: dbLatestWeekly ? { contest_name: dbLatestWeekly.contest_name, contest_date: dbLatestWeekly.contest_date } : null,
+                data: weeklySummary
+            },
+            biweekly: {
+                contest: dbLatestBiweekly ? { contest_name: dbLatestBiweekly.contest_name, contest_date: dbLatestBiweekly.contest_date } : null,
+                data: biweeklySummary
+            }
         });
     } catch (error) {
         res.status(500).json({ success: false, message: error.message });
@@ -148,7 +154,8 @@ router.get('/upcoming', async (req, res) => {
             success: true,
             fallback: true,
             contests: [
-                { title: 'Weekly Contest', startTime: nextSunday.getTime(), startTimeISO: nextSunday.toISOString() }
+                { title: 'Weekly Contest', startTime: nextSunday.getTime(), startTimeISO: nextSunday.toISOString() },
+                { title: 'Biweekly Contest', startTime: nextBiweekly.getTime(), startTimeISO: nextBiweekly.toISOString() }
             ]
         });
     }

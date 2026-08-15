@@ -9,8 +9,9 @@ import {
 } from 'recharts';
 import {
     getDashboardSummary, getDepartmentStats, getTopStudents,
-    getLowActivityStudents, getChartData, getAvailableDates, getFetchErrors
+    getLowActivityStudents, getChartData, getFetchErrors
 } from '../services/api';
+import { useDate } from '../context/DateContext';
 
 const COLORS = {
     easy: '#10b981',
@@ -53,26 +54,24 @@ function CustomTooltip({ active, payload, label }) {
 }
 
 export default function Dashboard() {
+    const { selectedDate } = useDate();
     const [summary, setSummary] = useState(null);
     const [deptStats, setDeptStats] = useState([]);
     const [topStudents, setTopStudents] = useState([]);
     const [lowActivity, setLowActivity] = useState([]);
     const [chartData, setChartData] = useState([]);
-    const [dates, setDates] = useState([]);
     const [fetchErrors, setFetchErrors] = useState([]);
-    const [selectedDate, setSelectedDate] = useState('');
     const [loading, setLoading] = useState(true);
 
     const loadData = useCallback(async (date) => {
         setLoading(true);
         try {
-            const [sum, dept, top, low, chart, dateList, errs] = await Promise.allSettled([
+            const [sum, dept, top, low, chart, errs] = await Promise.allSettled([
                 getDashboardSummary(date || undefined),
                 getDepartmentStats(),
                 getTopStudents(10),
                 getLowActivityStudents(0),
                 getChartData(14),
-                getAvailableDates(),
                 getFetchErrors()
             ]);
 
@@ -81,7 +80,6 @@ export default function Dashboard() {
             if (top.status === 'fulfilled') setTopStudents(top.value.data || []);
             if (low.status === 'fulfilled') setLowActivity(low.value.data || []);
             if (chart.status === 'fulfilled') setChartData(chart.value.data || []);
-            if (dateList.status === 'fulfilled') setDates(dateList.value.dates || []);
             if (errs.status === 'fulfilled') setFetchErrors(errs.value.data || []);
         } catch (e) {
             console.error('Dashboard load error:', e);
@@ -90,12 +88,7 @@ export default function Dashboard() {
         }
     }, []);
 
-    useEffect(() => { loadData(); }, [loadData]);
-
-    const handleDateChange = (e) => {
-        setSelectedDate(e.target.value);
-        loadData(e.target.value);
-    };
+    useEffect(() => { loadData(selectedDate); }, [loadData, selectedDate]);
 
     const diffData = summary ? [
         { name: 'Easy', value: summary.total_easy || 0, color: COLORS.easy },
@@ -115,18 +108,10 @@ export default function Dashboard() {
             <div className="page-header">
                 <div>
                     <h1 className="page-title">📊 Dashboard</h1>
-                    <p className="page-desc">Daily student performance overview</p>
+                    <p className="page-desc">Daily student performance overview {selectedDate && `(as of ${selectedDate})`}</p>
                 </div>
                 <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-                    {dates.length > 0 && (
-                        <select className="form-select" value={selectedDate} onChange={handleDateChange} style={{ width: 180 }}>
-                            <option value="">Latest Data</option>
-                            {dates.map(d => (
-                                <option key={d} value={d}>{d}</option>
-                            ))}
-                        </select>
-                    )}
-                    <button className="btn btn-secondary" onClick={() => loadData(selectedDate || undefined)}>
+                    <button className="btn btn-secondary" onClick={() => loadData(selectedDate)}>
                         <RefreshCw size={14} />
                         Refresh
                     </button>

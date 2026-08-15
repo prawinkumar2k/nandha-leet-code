@@ -13,6 +13,7 @@ import Contests from './pages/Contests';
 import Reports from './pages/Reports';
 import SettingsPage from './pages/SettingsPage';
 import { checkHealth } from './services/api';
+import { DateProvider } from './context/DateContext';
 
 export default function App() {
     const [backendReady, setBackendReady] = useState(false);
@@ -90,38 +91,40 @@ export default function App() {
     }
 
     return (
-        <div className="app-layout">
-            <Sidebar />
-            <div className="app-main">
-                <Topbar />
-                <div className="app-content">
-                    <Routes>
-                        <Route path="/" element={<Navigate to="/dashboard" replace />} />
-                        <Route path="/dashboard" element={<Dashboard />} />
-                        <Route path="/students" element={<Students />} />
-                        <Route path="/students/:id" element={<StudentDetail />} />
-                        <Route path="/import" element={<ImportPage />} />
-                        <Route path="/departments" element={<DepartmentsPage />} />
-                        <Route path="/contests" element={<Contests />} />
-                        <Route path="/reports" element={<Reports />} />
-                        <Route path="/settings" element={<SettingsPage />} />
-                        <Route path="*" element={<Navigate to="/dashboard" replace />} />
-                    </Routes>
+        <DateProvider>
+            <div className="app-layout">
+                <Sidebar />
+                <div className="app-main">
+                    <Topbar />
+                    <div className="app-content">
+                        <Routes>
+                            <Route path="/" element={<Navigate to="/dashboard" replace />} />
+                            <Route path="/dashboard" element={<Dashboard />} />
+                            <Route path="/students" element={<Students />} />
+                            <Route path="/students/:id" element={<StudentDetail />} />
+                            <Route path="/import" element={<ImportPage />} />
+                            <Route path="/departments" element={<DepartmentsPage />} />
+                            <Route path="/contests" element={<Contests />} />
+                            <Route path="/reports" element={<Reports />} />
+                            <Route path="/settings" element={<SettingsPage />} />
+                            <Route path="*" element={<Navigate to="/dashboard" replace />} />
+                        </Routes>
+                    </div>
                 </div>
+                <Toaster
+                    position="top-right"
+                    toastOptions={{
+                        style: {
+                            background: '#1e293b',
+                            color: '#f1f5f9',
+                            border: '1px solid #1e3a5f',
+                            borderRadius: '10px',
+                        },
+                        success: { iconTheme: { primary: '#10b981', secondary: '#0f172a' } },
+                        error: { iconTheme: { primary: '#ef4444', secondary: '#0f172a' } }
+                    }}
+                />
             </div>
-            <Toaster
-                position="top-right"
-                toastOptions={{
-                    style: {
-                        background: '#1e293b',
-                        color: '#f1f5f9',
-                        border: '1px solid #1e3a5f',
-                        borderRadius: '10px',
-                    },
-                    success: { iconTheme: { primary: '#10b981', secondary: '#0f172a' } },
-                    error: { iconTheme: { primary: '#ef4444', secondary: '#0f172a' } }
-                }}
-            />
-        </div>
+        </DateProvider>
     );
 }

@@ -179,8 +179,8 @@ async function getGlobalRanking(username) {
   return profile?.profile?.ranking || 0;
 }
 
-// Get latest Sunday contest data for a user
-function getLatestSundayContest(contestHistory) {
+// Get latest contest data for a user
+function getLatestContest(contestHistory) {
   if (!contestHistory || contestHistory.length === 0) {
     return { solved: 0, total: 4, name: 'N/A', date: null };
   }
@@ -198,12 +198,13 @@ function getLatestSundayContest(contestHistory) {
     return { solved: 0, total: 4, name: 'N/A', date: null };
   }
 
-  // Find the latest weekly contest (Sunday contests have "Weekly Contest" in title)
-  const weeklyContest = sorted.find(c =>
-    c.contest?.title?.toLowerCase().includes('weekly contest')
-  );
+  // Find the latest weekly or biweekly contest
+  const latestContest = sorted.find(c => {
+    const title = c.contest?.title?.toLowerCase() || '';
+    return title.includes('weekly contest') || title.includes('biweekly contest');
+  });
 
-  const target = weeklyContest || sorted[0];
+  const target = latestContest || sorted[0];
 
   return {
     solved: target.problemsSolved || 0,
@@ -286,7 +287,7 @@ async function fetchStudentData(profileUrl) {
     // Parse contest data — userContestRanking is null for non-participants
     const contestRanking = d.userContestRanking || null;
     const contestHistory = (d.userContestRankingHistory || []).filter(c => c.attended);
-    const sundayContest = getLatestSundayContest(contestHistory);
+    const latestContest = getLatestContest(contestHistory);
 
     // profile.ranking = the rank shown on their public profile (ALL users have this)
     // contestRanking.rating = only for contest participants
@@ -322,9 +323,9 @@ async function fetchStudentData(profileUrl) {
       recent_yesterday,
       contest_rating: contestRanking ? Math.round(contestRanking.rating || 0) : 0,
       global_ranking: profileRanking,
-      contest_solved: sundayContest.solved,
-      contest_total: sundayContest.total,
-      latest_contest: sundayContest,
+      contest_solved: latestContest.solved,
+      contest_total: latestContest.total,
+      latest_contest: latestContest,
       contest_history: contestHistory.slice(0, 20)
     };
   });
@@ -336,6 +337,6 @@ module.exports = {
   getSolvedProblems,
   getContestRating,
   getGlobalRanking,
-  getLatestSundayContest,
+  getLatestContest,
   sleep
 };

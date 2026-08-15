@@ -19,7 +19,7 @@
         "electron",
         "desktop"
     ],
-    "author": "Prawinkumar.N",
+    "author": "",
     "license": "MIT",
     "devDependencies": {
         "concurrently": "^8.2.2",

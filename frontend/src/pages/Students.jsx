@@ -7,6 +7,7 @@ import {
 import { deleteStudent } from '../services/api';
 import toast from 'react-hot-toast';
 import StudentDataModal from '../components/ManualEditModal';
+import { useDate } from '../context/DateContext';
 
 function SortIcon({ field, sortBy, sortDir }) {
     if (sortBy !== field) return <span className="sort-arrow">↕</span>;
@@ -17,6 +18,7 @@ function SortIcon({ field, sortBy, sortDir }) {
 
 export default function Students() {
     const navigate = useNavigate();
+    const { selectedDate } = useDate();
     const [students, setStudents] = useState([]);
     const [departments, setDepartments] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -24,7 +26,7 @@ export default function Students() {
     const [department, setDepartment] = useState('');
     const [sortBy, setSortBy] = useState('total_solved');
     const [sortDir, setSortDir] = useState('DESC');
-    const [selectedDate, setSelectedDate] = useState('');
+    const [showBanned, setShowBanned] = useState(false);
     const [editingStudent, setEditingStudent] = useState(null);
     const [isAddingMode, setIsAddingMode] = useState(false);
     const [refreshingId, setRefreshingId] = useState(null);
@@ -38,7 +40,8 @@ export default function Students() {
                 search: search || undefined,
                 department: department || undefined,
                 sortBy, sortDir,
-                date: selectedDate || undefined
+                date: selectedDate || undefined,
+                banned: showBanned
             });
             setStudents(result.students || []);
         } catch (e) {
@@ -46,7 +49,7 @@ export default function Students() {
         } finally {
             setLoading(false);
         }
-    }, [search, department, sortBy, sortDir, selectedDate]);
+    }, [search, department, sortBy, sortDir, selectedDate, showBanned]);
 
     useEffect(() => {
         import('../services/api').then(({ getDepartments }) => {
@@ -81,6 +84,21 @@ export default function Students() {
             toast.error(`Failed: ${e.response?.data?.message || e.message}`);
         } finally {
             setRefreshingId(null);
+        }
+    };
+
+    const handleBanToggle = async (e, student) => {
+        e.stopPropagation();
+        const action = student.is_banned ? 'unban' : 'ban';
+        if (window.confirm(`Are you sure you want to ${action} ${student.name}?`)) {
+            try {
+                const { banStudent } = await import('../services/api');
+                await banStudent(student.id, !student.is_banned);
+                toast.success(`Student ${action}ned successfully`);
+                loadStudents();
+            } catch (e) {
+                toast.error(`Failed to ${action} student`);
+            }
         }
     };
 
@@ -161,7 +179,7 @@ export default function Students() {
 
             {/* Filters */}
             <div className="filters-row">
-                <div className="search-bar" style={{ flex: 1, maxWidth: 340 }}>
+                <div className="search-bar" style={{ flex: 1, maxWidth: 280 }}>
                     <Search className="search-icon" />
                     <input
                         className="form-input"
@@ -170,7 +188,13 @@ export default function Students() {
                         onChange={e => setSearch(e.target.value)}
                     />
                 </div>
-                <select className="form-select" style={{ width: 180 }} value={department} onChange={e => setDepartment(e.target.value)}>
+                
+                <select className="form-select" style={{ width: 140 }} value={showBanned ? 'true' : 'false'} onChange={e => setShowBanned(e.target.value === 'true')}>
+                    <option value="false">Active Students</option>
+                    <option value="true">Banned Students</option>
+                </select>
+
+                <select className="form-select" style={{ width: 160 }} value={department} onChange={e => setDepartment(e.target.value)}>
                     <option value="">All Departments</option>
                     {departments.map(d => <option key={d} value={d}>{d}</option>)}
                 </select>
@@ -277,6 +301,14 @@ export default function Students() {
                                                 onClick={(e) => { e.stopPropagation(); setEditingStudent(s); }}
                                             >
                                                 <Edit2 size={12} />
+                                            </button>
+                                            <button
+                                                className="btn btn-secondary btn-sm btn-icon"
+                                                title={s.is_banned ? "Unban student" : "Ban student"}
+                                                onClick={(e) => handleBanToggle(e, s)}
+                                                style={{ color: s.is_banned ? 'var(--color-easy)' : 'var(--color-medium)' }}
+                                            >
+                                                <span style={{ fontSize: 13, fontWeight: "bold" }}>{s.is_banned ? '✓' : '🚫'}</span>
                                             </button>
                                             <button
                                                 className="btn btn-secondary btn-sm btn-icon"

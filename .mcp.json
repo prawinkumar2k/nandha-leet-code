@@ -1,0 +1,16 @@
+{
+  "mcpServers": {
+    "jetro": {
+      "type": "stdio",
+      "command": "C:\\Users\\Hp\\.jetro\\runtime\\node-win32-x64.exe",
+      "args": [
+        "C:\\Users\\Hp\\.jetro\\mcp-server\\index.js"
+      ],
+      "env": {
+        "JET_WORKSPACE": "c:\\Users\\Hp\\Desktop\\nandha-leet-code",
+        "JET_API_URL": "https://api.jetro.ai",
+        "PATH": "C:\\Users\\Hp\\.jetro\\runtime;C:\\Program Files (x86)\\Common Files\\Oracle\\Java\\javapath;C:\\Program Files\\Common Files\\Oracle\\Java\\javapath;C:\\Program Files\\Git\\bin;;C:\\Program Files\\k6\\;C:\\Program Files\\nodejs\\;C:\\Program Files\\dotnet\\;c:\\Program Files\\Microsoft SQL Server\\Client SDK\\ODBC\\130\\Tools\\Binn\\;c:\\Program Files\\Microsoft SQL Server\\140\\DTS\\Binn\\;C:\\WINDOWS\\system32;C:\\WINDOWS;C:\\WINDOWS\\System32\\Wbem;C:\\WINDOWS\\System32\\WindowsPowerShell\\v1.0\\;C:\\WINDOWS\\System32\\OpenSSH\\;C:\\Program Files\\Tailscale\\;C:\\Program Files\\Docker\\Docker\\resources\\bin;C:\\Program Files (x86)\\Common Files\\Oracle\\Java\\javapath;C:\\Program Files\\Common Files\\Oracle\\Java\\javapath;C:\\Program Files\\Git\\bin;;C:\\Program Files\\k6\\;C:\\Program Files\\Docker\\Docker\\resources\\bin;C:\\Program Files\\nodejs\\;C:\\Program Files\\dotnet\\;c:\\Program Files\\Microsoft SQL Server\\Client SDK\\ODBC\\130\\Tools\\Binn\\;c:\\Program Files\\Microsoft SQL Server\\140\\DTS\\Binn\\;C:\\Program Files\\MySQL\\MySQL Shell 8.0\\bin\\;C:\\Users\\Hp\\AppData\\Local\\Microsoft\\WindowsApps;C:\\Users\\Hp\\AppData\\Local\\Programs\\Microsoft VS Code\\bin;C:\\Users\\Hp\\AppData\\Local\\GitHubDesktop\\bin;C:\\Users\\Hp\\AppData\\Local\\Python\\bin;C:\\Users\\Hp\\AppData\\Roaming\\npm;C:\\Windows\\System32;C:\\Windows\\System32\\WindowsPowerShell\\v1.0;C:\\Users\\Hp\\.cargo\\bin;C:\\Users\\Hp\\AppData\\Local\\Programs\\Ollama;C:\\Users\\Hp\\.bun\\bin;C:\\Users\\Hp\\AppData\\Local\\Microsoft\\WindowsApps;C:\\Users\\Hp\\AppData\\Local\\Programs\\Antigravity\\bin;C:\\Users\\Hp\\.puro\\bin;C:\\Users\\Hp\\.puro\\shared\\pub_cache\\bin;C:\\Users\\Hp\\.puro\\envs\\default\\flutter\\bin;C:\\Users\\Hp\\AppData\\Local\\Programs\\cursor\\resources\\app\\bin"
+      }
+    }
+  }
+}

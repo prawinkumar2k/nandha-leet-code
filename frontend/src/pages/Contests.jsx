@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Trophy, Medal, Star, Calendar, Clock, ExternalLink, Timer } from 'lucide-react';
 import { getLatestContest, getUpcomingContests } from '../services/api';
+import { useDate } from '../context/DateContext';
 
 // ── Live countdown timer hook ─────────────────────────────────────────────────
 function useCountdown(targetMs) {
@@ -87,21 +88,27 @@ function ContestCountdown({ contest }) {
 
 // ── Main page ──────────────────────────────────────────────────────────────────
 export default function Contests() {
-    const [latestContest, setLatestContest] = useState(null);
-    const [summary, setSummary] = useState([]);
+    const { selectedDate } = useDate();
+    const [weeklyData, setWeeklyData] = useState({ contest: null, data: [] });
+    const [biweeklyData, setBiweeklyData] = useState({ contest: null, data: [] });
+    const [activeTab, setActiveTab] = useState('weekly');
     const [upcoming, setUpcoming] = useState([]);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        Promise.all([getLatestContest(), getUpcomingContests()])
-            .then(([contestData, upcomingData]) => {
-                setLatestContest(contestData.contest);
-                setSummary(contestData.data || []);
+        Promise.all([getLatestContest(selectedDate || undefined), getUpcomingContests()])
+            .then(([contestRes, upcomingData]) => {
+                setWeeklyData(contestRes.weekly || { contest: null, data: [] });
+                setBiweeklyData(contestRes.biweekly || { contest: null, data: [] });
                 setUpcoming(upcomingData.contests || []);
             })
             .catch(e => console.error(e))
             .finally(() => setLoading(false));
-    }, []);
+    }, [selectedDate]);
+
+    const currentView = activeTab === 'weekly' ? weeklyData : biweeklyData;
+    const latestContest = currentView.contest;
+    const summary = currentView.data || [];
 
     const getContestColor = (solved, total) => {
         const ratio = solved / (total || 4);
@@ -138,6 +145,36 @@ export default function Contests() {
                     ))}
                 </div>
             )}
+
+            {/* Tabs */}
+            <div style={{ display: 'flex', gap: 10, marginBottom: 20 }}>
+                <button 
+                    className="btn"
+                    style={{ 
+                        flex: 1, 
+                        background: activeTab === 'weekly' ? 'var(--color-brand)' : 'var(--color-bg-secondary)', 
+                        color: activeTab === 'weekly' ? '#fff' : 'var(--color-text-primary)',
+                        border: `1px solid ${activeTab === 'weekly' ? 'var(--color-brand)' : 'var(--border-color)'}`,
+                        justifyContent: 'center'
+                    }}
+                    onClick={() => setActiveTab('weekly')}
+                >
+                    Weekly Contests
+                </button>
+                <button 
+                    className="btn"
+                    style={{ 
+                        flex: 1, 
+                        background: activeTab === 'biweekly' ? 'var(--color-brand)' : 'var(--color-bg-secondary)', 
+                        color: activeTab === 'biweekly' ? '#fff' : 'var(--color-text-primary)',
+                        border: `1px solid ${activeTab === 'biweekly' ? 'var(--color-brand)' : 'var(--border-color)'}`,
+                        justifyContent: 'center'
+                    }}
+                    onClick={() => setActiveTab('biweekly')}
+                >
+                    Biweekly Contests
+                </button>
+            </div>
 
             {loading ? (
                 <div className="empty-state"><div className="spinner spinner-lg"></div></div>

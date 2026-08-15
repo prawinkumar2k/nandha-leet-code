@@ -1,9 +1,11 @@
 import { useState, useEffect, useRef } from 'react';
 import { RefreshCw, Wifi, WifiOff, Clock, CheckCircle2, XCircle, Loader2 } from 'lucide-react';
 import { refreshAll, getRefreshStatus, stopRefresh } from '../services/api';
+import { useDate } from '../context/DateContext';
 import toast from 'react-hot-toast';
 
 export default function Topbar({ lastRefresh, onRefreshComplete }) {
+    const { selectedDate, setSelectedDate, availableDates } = useDate();
     const [isRefreshing, setIsRefreshing] = useState(false);
     const [refreshInfo, setRefreshInfo] = useState(null);
     const [online, setOnline] = useState(navigator.onLine);
@@ -85,12 +87,28 @@ export default function Topbar({ lastRefresh, onRefreshComplete }) {
                 <div className="topbar-title">
                     LEO
                     <span className="topbar-subtitle" style={{ marginLeft: 12, fontSize: 12, fontWeight: 400 }}>
-                        Student Performance Dashboard — by Prawinkumar.N
+                        Student Performance Dashboard
                     </span>
                 </div>
             </div>
 
             <div className="topbar-info">
+                {/* Date Picker */}
+                {availableDates && availableDates.length > 0 && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <select 
+                            className="form-select form-select-sm" 
+                            style={{ background: 'rgba(255,255,255,0.1)', color: '#fff', border: '1px solid rgba(255,255,255,0.2)', fontSize: 12, padding: '4px 24px 4px 8px' }}
+                            value={selectedDate || availableDates[0]} 
+                            onChange={e => setSelectedDate(e.target.value)}
+                        >
+                            {availableDates.map(d => (
+                                <option key={d} value={d} style={{ color: '#0f172a' }}>{d} {d === availableDates[0] ? '(Latest)' : ''}</option>
+                            ))}
+                        </select>
+                    </div>
+                )}
+
                 {/* Online Status */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12 }}>
                     {online

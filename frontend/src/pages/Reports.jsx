@@ -1,19 +1,15 @@
 import { useState, useEffect } from 'react';
 import { BarChart3, Download, FileText, Table, AlertCircle } from 'lucide-react';
-import { getDailyReport, exportExcel, exportCsv, getAvailableDates, getFetchErrors } from '../services/api';
+import { getDailyReport, exportExcel, exportCsv, getFetchErrors } from '../services/api';
+import { useDate } from '../context/DateContext';
 import toast from 'react-hot-toast';
 
 export default function Reports() {
+    const { selectedDate } = useDate();
     const [activeTab, setActiveTab] = useState('daily');
     const [report, setReport] = useState([]);
-    const [dates, setDates] = useState([]);
-    const [selectedDate, setSelectedDate] = useState('');
     const [errors, setErrors] = useState([]);
     const [loading, setLoading] = useState(false);
-
-    useEffect(() => {
-        getAvailableDates().then(r => setDates(r.dates || []));
-    }, []);
 
     useEffect(() => {
         if (activeTab === 'daily') {
@@ -32,7 +28,7 @@ export default function Reports() {
             <div className="page-header">
                 <div>
                     <h1 className="page-title">📋 Reports</h1>
-                    <p className="page-desc">Daily performance and export reports</p>
+                    <p className="page-desc">Daily performance and export reports {selectedDate && `(as of ${selectedDate})`}</p>
                 </div>
                 <div style={{ display: 'flex', gap: 10 }}>
                     <button className="btn btn-secondary btn-sm" onClick={() => exportExcel('daily', selectedDate || undefined)}>
@@ -56,17 +52,8 @@ export default function Reports() {
 
             {activeTab === 'daily' && (
                 <div>
-                    {/* Date Filter */}
+                    {/* Date Filter removed since it's global now */}
                     <div className="filters-row">
-                        <select
-                            className="form-select"
-                            style={{ width: 200 }}
-                            value={selectedDate}
-                            onChange={e => setSelectedDate(e.target.value)}
-                        >
-                            <option value="">Latest Data</option>
-                            {dates.map(d => <option key={d} value={d}>{d}</option>)}
-                        </select>
                         <span style={{ fontSize: 12, color: 'var(--color-text-muted)' }}>
                             {report.length} students
                         </span>

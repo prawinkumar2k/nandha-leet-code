@@ -39,8 +39,7 @@ export default function Sidebar() {
 
             <div style={{ padding: '12px 16px', borderTop: '1px solid rgba(255,255,255,0.12)' }}>
                 <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.45)', lineHeight: 1.5 }}>
-                    <div style={{ fontWeight: 600, marginBottom: 2, color: 'rgba(255,255,255,0.6)' }}>v1.0.0</div>
-                    <div>Developed by <strong style={{ color: '#dae3f3' }}>Prawinkumar.N</strong></div>
+                    <div style={{ fontWeight: 600, marginBottom: 2, color: 'rgba(255, 255, 255, 0.6)' }}>v1.0.0</div>
                 </div>
             </div>
         </div>

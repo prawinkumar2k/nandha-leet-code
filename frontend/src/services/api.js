@@ -24,6 +24,9 @@ export const createStudent = (data) =>
 export const updateStudentManual = (id, data) =>
     axios.put(`${API_BASE}/students/${id}/manual`, data).then(r => r.data);
 
+export const banStudent = (id, is_banned) =>
+    axios.put(`${API_BASE}/students/${id}/ban`, { is_banned }).then(r => r.data);
+
 export const deleteStudent = (id) =>
     axios.delete(`${API_BASE}/students/${id}`).then(r => r.data);
 
@@ -100,8 +103,8 @@ export const exportCsv = (date) => {
 export const getContests = (student_id) =>
     axios.get(`${API_BASE}/contests`, { params: { student_id } }).then(r => r.data);
 
-export const getLatestContest = () =>
-    axios.get(`${API_BASE}/contests/latest`).then(r => r.data);
+export const getLatestContest = (date) =>
+    axios.get(`${API_BASE}/contests/latest`, { params: { date } }).then(r => r.data);
 
 export const getUpcomingContests = () =>
     axios.get(`${API_BASE}/contests/upcoming`).then(r => r.data);

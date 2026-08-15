@@ -25,6 +25,7 @@ async function getDashboardSummary(date) {
       MIN(CASE WHEN ds.global_ranking > 0 THEN ds.global_ranking ELSE NULL END) as best_global_ranking
     FROM students s
     LEFT JOIN daily_stats ds ON s.id = ds.student_id AND ds.date = ?
+    WHERE COALESCE(s.is_banned, 0) = 0
   `, [targetDate]);
 
   return {
@@ -77,6 +78,7 @@ async function getLatestStatsForStudents() {
       AND ds.date = (
         SELECT MAX(date) FROM daily_stats WHERE student_id = s.id
       )
+    WHERE COALESCE(s.is_banned, 0) = 0
     ORDER BY ds.total_solved DESC, s.name ASC
   `);
 }
@@ -98,6 +100,7 @@ async function getDepartmentStats() {
       AND ds.date = (
         SELECT MAX(date) FROM daily_stats WHERE student_id = s.id
       )
+    WHERE COALESCE(s.is_banned, 0) = 0
     GROUP BY s.department
     ORDER BY avg_solved DESC
   `);
@@ -126,6 +129,7 @@ async function getDailyReport(date) {
       COALESCE(ds.global_ranking, 0) as global_ranking
     FROM students s
     LEFT JOIN daily_stats ds ON s.id = ds.student_id AND ds.date = ?
+    WHERE COALESCE(s.is_banned, 0) = 0
     ORDER BY rank
   `, [targetDate]);
 }
@@ -146,6 +150,7 @@ async function getTopStudents(limit = 10) {
     FROM students s
     LEFT JOIN daily_stats ds ON s.id = ds.student_id 
       AND ds.date = (SELECT MAX(date) FROM daily_stats WHERE student_id = s.id)
+    WHERE COALESCE(s.is_banned, 0) = 0
     ORDER BY total_solved DESC, today_solved DESC
     LIMIT ?
   `, [limit]);
@@ -168,7 +173,7 @@ async function getLowActivityStudents(threshold = 0) {
     FROM students s
     LEFT JOIN daily_stats ds ON s.id = ds.student_id 
       AND ds.date = (SELECT MAX(date) FROM daily_stats WHERE student_id = s.id)
-    WHERE COALESCE(ds.today_solved, 0) <= ?
+    WHERE COALESCE(ds.today_solved, 0) <= ? AND COALESCE(s.is_banned, 0) = 0
     ORDER BY total_solved ASC
   `, [threshold]);
 }
@@ -179,17 +184,18 @@ async function getDailyChartData(days = 7) {
 
   return await db.all(`
     SELECT 
-      date,
-      SUM(total_solved) as total,
-      SUM(easy_solved) as easy,
-      SUM(medium_solved) as medium,
-      SUM(hard_solved) as hard,
-      COUNT(DISTINCT student_id) as active_students,
-      SUM(today_solved) as new_solved
-    FROM daily_stats
-    WHERE date >= date('now', '-' || ? || ' days')
-    GROUP BY date
-    ORDER BY date ASC
+      ds.date,
+      SUM(ds.total_solved) as total,
+      SUM(ds.easy_solved) as easy,
+      SUM(ds.medium_solved) as medium,
+      SUM(ds.hard_solved) as hard,
+      COUNT(DISTINCT ds.student_id) as active_students,
+      SUM(ds.today_solved) as new_solved
+    FROM daily_stats ds
+    JOIN students s ON s.id = ds.student_id
+    WHERE ds.date >= date('now', '-' || ? || ' days') AND COALESCE(s.is_banned, 0) = 0
+    GROUP BY ds.date
+    ORDER BY ds.date ASC
   `, [days]);
 }
 

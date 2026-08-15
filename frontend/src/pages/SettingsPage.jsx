@@ -183,13 +183,12 @@ export default function SettingsPage() {
                             <div className="card-title">ℹ️ About LEO</div>
                         </div>
                         <div style={{ fontSize: 13, color: 'var(--color-text-secondary)', lineHeight: 2 }}>
-                            <div>Developer: <strong style={{ color: 'var(--color-brand)', fontSize: 14 }}>Prawinkumar.N</strong></div>
                             <div>Version: <strong style={{ color: 'var(--color-brand)' }}>1.0.0</strong></div>
                             <div>Stack: React + Vite + Express + SQLite + Electron</div>
                             <div>Database: SQLite (local, no internet required)</div>
                             <div>LeetCode API: GraphQL endpoint</div>
                             <div style={{ marginTop: 8, paddingTop: 8, borderTop: '1px solid var(--color-border)', fontSize: 11, color: 'var(--color-text-muted)' }}>
-                                © 2026 Prawinkumar.N — All Rights Reserved
+                                © 2026 — All Rights Reserved
                             </div>
                         </div>
                     </div>
