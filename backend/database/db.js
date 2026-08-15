@@ -42,7 +42,9 @@ function saveDb() {
 async function initDb() {
     if (db) return dbWrapper;
 
-    sqlJs = await initSqlJs();
+    sqlJs = await initSqlJs({
+        locateFile: file => path.join(__dirname, '..', '..', 'node_modules', 'sql.js', 'dist', file)
+    });
     const dbPath = getDbPath();
 
     if (fs.existsSync(dbPath)) {
@@ -54,6 +56,16 @@ async function initDb() {
         try {
             db.run(`ALTER TABLE students ADD COLUMN batch TEXT;`);
             console.log('Migration: Added `batch` column to students table');
+            isDirty = true;
+            saveDb();
+        } catch (e) {
+            // Likely already exists, ignore
+        }
+
+        // Migration: add is_banned column if missing
+        try {
+            db.run(`ALTER TABLE students ADD COLUMN is_banned INTEGER DEFAULT 0;`);
+            console.log('Migration: Added `is_banned` column to students table');
             isDirty = true;
             saveDb();
         } catch (e) {

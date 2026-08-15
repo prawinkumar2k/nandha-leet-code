@@ -8,6 +8,7 @@ CREATE TABLE IF NOT EXISTS students (
   batch TEXT,
   leetcode_profile_url TEXT,
   leetcode_username TEXT,
+  is_banned INTEGER DEFAULT 0,
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
