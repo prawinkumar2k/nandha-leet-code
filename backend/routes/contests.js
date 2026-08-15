@@ -53,7 +53,7 @@ router.get('/latest', async (req, res) => {
               AND contest_name NOT LIKE '%Biweekly%'
               ${dateCondition}
             ORDER BY contest_date DESC LIMIT 1
-        `, ...queryParams);
+        `, queryParams);
 
         // Get latest Biweekly Contest
         const dbLatestBiweekly = await db.get(`
@@ -63,7 +63,7 @@ router.get('/latest', async (req, res) => {
               AND contest_name LIKE '%Biweekly%'
               ${dateCondition}
             ORDER BY contest_date DESC LIMIT 1
-        `, ...queryParams);
+        `, queryParams);
 
         // Function to fetch summary for a contest
         const getSummary = async (contestName) => {
