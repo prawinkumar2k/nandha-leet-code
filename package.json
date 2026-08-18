@@ -26,6 +26,7 @@
         "cross-env": "^7.0.3",
         "electron": "^31.0.0",
         "electron-builder": "^24.13.3",
+        "electron-packager": "^17.1.2",
         "wait-on": "^7.2.0"
     },
     "dependencies": {
@@ -55,7 +56,7 @@
         "win": {
             "target": [
                 {
-                    "target": "portable",
+                    "target": "zip",
                     "arch": [
                         "x64"
                     ]

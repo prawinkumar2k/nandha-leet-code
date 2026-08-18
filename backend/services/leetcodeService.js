@@ -42,15 +42,13 @@ function extractUsername(profileUrl) {
 const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
 // Retry with exponential backoff
-async function retryRequest(fn, maxRetries = 3, baseDelay = 1000) {
-  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+async function retryRequest(fn, maxRetries = 2) {
+  for (let i = 0; i < maxRetries; i++) {
     try {
       return await fn();
     } catch (error) {
-      if (attempt === maxRetries) throw error;
-      const delay = baseDelay * Math.pow(2, attempt) + Math.random() * 500;
-      console.log(`Retry ${attempt + 1}/${maxRetries} after ${Math.round(delay)}ms`);
-      await sleep(delay);
+      if (i === maxRetries - 1) throw error;
+      await sleep(500);
     }
   }
 }
