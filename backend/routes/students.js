@@ -290,8 +290,8 @@ router.get('/sample/insert', async (req, res) => {
                     await db.run(`
             INSERT OR REPLACE INTO daily_stats 
               (student_id, date, total_solved, easy_solved, medium_solved, hard_solved, 
-               yesterday_solved, today_solved, contest_solved, contest_total, contest_rating, global_ranking, data_source)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'sample')
+               yesterday_solved, today_solved, contest_solved, contest_total, contest_rating, global_ranking, data_source, language_stats, recent_submissions)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'sample', '[]', '[]')
           `, [
                         student.id, today, total, easy, medium, hard,
                         Math.floor(Math.random() * 5),

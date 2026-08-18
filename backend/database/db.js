@@ -103,6 +103,14 @@ async function initDb() {
             isDirty = true;
             saveDb();
         } catch (e) { }
+
+        try {
+            db.run(`ALTER TABLE students ADD COLUMN language_stats TEXT;`);
+            db.run(`ALTER TABLE students ADD COLUMN recent_submissions TEXT;`);
+            console.log('Migration: Added language_stats and recent_submissions to students');
+            isDirty = true;
+            saveDb();
+        } catch (e) { }
     } else {
         db = new sqlJs.Database();
 

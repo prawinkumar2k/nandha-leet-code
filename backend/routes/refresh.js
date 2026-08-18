@@ -152,9 +152,11 @@ async function processStudent(studentId, profileUrl, db) {
                     fundamental_solved = coalesce(?, fundamental_solved),
                     intermediate_solved = coalesce(?, intermediate_solved),
                     advanced_solved = coalesce(?, advanced_solved),
+                    language_stats = coalesce(?, language_stats),
+                    recent_submissions = coalesce(?, recent_submissions),
                     updated_at = CURRENT_TIMESTAMP 
                 WHERE id = ?`,
-                [data.username || null, data.badges || null, data.top_language || null, data.admin_tags || null, data.fundamental_solved, data.intermediate_solved, data.advanced_solved, studentId]
+                [data.username || null, data.badges || null, data.top_language || null, data.admin_tags || null, data.fundamental_solved, data.intermediate_solved, data.advanced_solved, data.language_stats, data.recent_submissions, studentId]
             );
         }
 

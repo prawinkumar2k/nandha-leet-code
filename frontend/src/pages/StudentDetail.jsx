@@ -7,7 +7,8 @@ import {
 import {
     LineChart, Line, AreaChart, Area, BarChart, Bar, XAxis, YAxis,
     CartesianGrid, Tooltip, Legend, ResponsiveContainer,
-    RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar
+    RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar,
+    PieChart, Pie, Cell
 } from 'recharts';
 import { getStudent, refreshStudent, verifyStudent, getHistoricStats } from '../services/api';
 import toast from 'react-hot-toast';
@@ -104,6 +105,22 @@ export default function StudentDetail() {
         { subject: 'Intermediate', A: student.intermediate_solved || 0, fullMark: 100 },
         { subject: 'Advanced', A: student.advanced_solved || 0, fullMark: 100 },
     ];
+
+    let languagesData = [];
+    try {
+        if (student.language_stats) {
+            const parsed = typeof student.language_stats === 'string' ? JSON.parse(student.language_stats) : student.language_stats;
+            if (Array.isArray(parsed)) languagesData = parsed;
+        }
+    } catch (e) { }
+
+    let recentSubmissions = [];
+    try {
+        if (student.recent_submissions) {
+            const parsed = typeof student.recent_submissions === 'string' ? JSON.parse(student.recent_submissions) : student.recent_submissions;
+            if (Array.isArray(parsed)) recentSubmissions = parsed;
+        }
+    } catch (e) { }
 
     const initials = student.name?.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() || '??';
 
@@ -384,6 +401,58 @@ export default function StudentDetail() {
                                     <p style={{ color: 'var(--color-text-muted)', fontSize: 12 }}>No data.</p>
                                 </div>
                             )}
+                        </div>
+                    </div>
+
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+                        {/* Language Mix Breakdown */}
+                        <div className="card">
+                            <div className="card-header">
+                                <div className="card-title">Top Languages Used</div>
+                            </div>
+                            {languagesData.length > 0 ? (
+                                <div style={{ height: 220 }}>
+                                    <ResponsiveContainer width="100%" height="100%">
+                                        <PieChart>
+                                            <Pie data={languagesData} dataKey="problemsSolved" nameKey="languageName" cx="50%" cy="50%" innerRadius={50} outerRadius={80} paddingAngle={5}>
+                                                {languagesData.map((entry, index) => (
+                                                    <Cell key={`cell-${index}`} fill={['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'][index % 5]} />
+                                                ))}
+                                            </Pie>
+                                            <Tooltip contentStyle={{ backgroundColor: '#1e293b', borderColor: '#334155' }} itemStyle={{ color: '#f8fafc' }} />
+                                            <Legend wrapperStyle={{ fontSize: 11 }} />
+                                        </PieChart>
+                                    </ResponsiveContainer>
+                                </div>
+                            ) : (
+                                <div className="empty-state" style={{ padding: 24 }}><p>No languages recorded.</p></div>
+                            )}
+                        </div>
+
+                        {/* Recent Problems Solved Feed */}
+                        <div className="card" style={{ display: 'flex', flexDirection: 'column' }}>
+                            <div className="card-header">
+                                <div className="card-title">Recent Problems (Live)</div>
+                            </div>
+                            <div style={{ padding: 16, flex: 1, overflowY: 'auto', maxHeight: 220 }}>
+                                {recentSubmissions.length > 0 ? (
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                                        {recentSubmissions.map((sub, i) => (
+                                            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                                                <div style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--color-easy)' }}></div>
+                                                <div style={{ flex: 1 }}>
+                                                    <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--color-text-primary)' }}>{sub.title}</div>
+                                                    <div style={{ fontSize: 11, color: 'var(--color-text-muted)' }}>
+                                                        {sub.timestamp ? new Date(sub.timestamp * 1000).toLocaleString() : 'Unknown date'}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <div className="empty-state" style={{ height: '100%' }}><p>No recent activity detected.</p></div>
+                                )}
+                            </div>
                         </div>
                     </div>
 

@@ -14,6 +14,8 @@ CREATE TABLE IF NOT EXISTS students (
   fundamental_solved INTEGER DEFAULT 0,
   intermediate_solved INTEGER DEFAULT 0,
   advanced_solved INTEGER DEFAULT 0,
+  language_stats TEXT,
+  recent_submissions TEXT,
   is_banned INTEGER DEFAULT 0,
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME DEFAULT CURRENT_TIMESTAMP

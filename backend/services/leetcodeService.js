@@ -376,7 +376,9 @@ async function fetchStudentData(profileUrl) {
       contest_history: contestHistory.slice(0, 20),
       fundamental_solved: fundamentalCount,
       intermediate_solved: intermediateCount,
-      advanced_solved: advancedCount
+      advanced_solved: advancedCount,
+      language_stats: JSON.stringify(user.languageProblemCount || []),
+      recent_submissions: JSON.stringify(recentSubmissions)
     };
   });
 }
