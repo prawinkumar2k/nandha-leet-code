@@ -411,18 +411,33 @@ export default function StudentDetail() {
                                 <div className="card-title">Top Languages Used</div>
                             </div>
                             {languagesData.length > 0 ? (
-                                <div style={{ height: 220 }}>
-                                    <ResponsiveContainer width="100%" height="100%">
-                                        <PieChart>
-                                            <Pie data={languagesData} dataKey="problemsSolved" nameKey="languageName" cx="50%" cy="50%" innerRadius={50} outerRadius={80} paddingAngle={5}>
-                                                {languagesData.map((entry, index) => (
-                                                    <Cell key={`cell-${index}`} fill={['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'][index % 5]} />
-                                                ))}
-                                            </Pie>
-                                            <Tooltip contentStyle={{ backgroundColor: '#1e293b', borderColor: '#334155' }} itemStyle={{ color: '#f8fafc' }} />
-                                            <Legend wrapperStyle={{ fontSize: 11 }} />
-                                        </PieChart>
-                                    </ResponsiveContainer>
+                                <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+                                    <div style={{ height: 180, width: '100%' }}>
+                                        <ResponsiveContainer width="100%" height="100%">
+                                            <PieChart>
+                                                <Pie data={languagesData} dataKey="problemsSolved" nameKey="languageName" cx="50%" cy="50%" innerRadius={40} outerRadius={70} paddingAngle={2}>
+                                                    {languagesData.map((entry, index) => (
+                                                        <Cell key={`cell-${index}`} fill={['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#14b8a6'][index % 7]} />
+                                                    ))}
+                                                </Pie>
+                                                <Tooltip contentStyle={{ backgroundColor: '#1e293b', borderColor: '#334155' }} itemStyle={{ color: '#f8fafc' }} />
+                                            </PieChart>
+                                        </ResponsiveContainer>
+                                    </div>
+                                    {/* Explicit Data Tags for exact counts */}
+                                    <div style={{ padding: '0 16px 16px', display: 'flex', flexWrap: 'wrap', gap: 6, justifyContent: 'center' }}>
+                                        {languagesData.map((lang, index) => (
+                                            <div key={index} style={{
+                                                display: 'flex', alignItems: 'center', gap: 6,
+                                                background: 'rgba(255,255,255,0.05)', border: '1px solid var(--color-border)',
+                                                padding: '4px 8px', borderRadius: 4, fontSize: 11
+                                            }}>
+                                                <div style={{ width: 6, height: 6, borderRadius: '50%', background: ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#14b8a6'][index % 7] }}></div>
+                                                <span style={{ fontWeight: 600, color: 'var(--color-text-primary)' }}>{lang.languageName}</span>
+                                                <span style={{ color: 'var(--color-text-muted)' }}>{lang.problemsSolved}</span>
+                                            </div>
+                                        ))}
+                                    </div>
                                 </div>
                             ) : (
                                 <div className="empty-state" style={{ padding: 24 }}><p>No languages recorded.</p></div>
