@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Trophy, Medal, Star, Calendar, Clock, ExternalLink, Timer } from 'lucide-react';
+import { Trophy, Medal, Star, Calendar, Clock, ExternalLink, Timer, Download } from 'lucide-react';
 import { getLatestContest, getUpcomingContests } from '../services/api';
 import { useDate } from '../context/DateContext';
 
@@ -132,6 +132,20 @@ export default function Contests() {
                     <h1 className="page-title">🏆 Contests</h1>
                     <p className="page-desc">LeetCode Weekly & Biweekly Contest tracking</p>
                 </div>
+                <div style={{ display: 'flex', gap: 10 }}>
+                    <button className="btn btn-secondary btn-sm" onClick={async () => {
+                        const { exportExcel } = await import('../services/api');
+                        exportExcel(activeTab === 'weekly' ? 'contest_weekly' : 'contest_biweekly', selectedDate || undefined);
+                    }}>
+                        <Download size={13} /> Excel
+                    </button>
+                    <button className="btn btn-secondary btn-sm" onClick={async () => {
+                        const { exportCsv } = await import('../services/api');
+                        exportCsv(activeTab === 'weekly' ? 'contest_weekly' : 'contest_biweekly', selectedDate || undefined);
+                    }}>
+                        <Download size={13} /> CSV
+                    </button>
+                </div>
             </div>
 
             {/* Upcoming Contests */}
@@ -148,11 +162,11 @@ export default function Contests() {
 
             {/* Tabs */}
             <div style={{ display: 'flex', gap: 10, marginBottom: 20 }}>
-                <button 
+                <button
                     className="btn"
-                    style={{ 
-                        flex: 1, 
-                        background: activeTab === 'weekly' ? 'var(--color-brand)' : 'var(--color-bg-secondary)', 
+                    style={{
+                        flex: 1,
+                        background: activeTab === 'weekly' ? 'var(--color-brand)' : 'var(--color-bg-secondary)',
                         color: activeTab === 'weekly' ? '#fff' : 'var(--color-text-primary)',
                         border: `1px solid ${activeTab === 'weekly' ? 'var(--color-brand)' : 'var(--border-color)'}`,
                         justifyContent: 'center'
@@ -161,11 +175,11 @@ export default function Contests() {
                 >
                     Weekly Contests
                 </button>
-                <button 
+                <button
                     className="btn"
-                    style={{ 
-                        flex: 1, 
-                        background: activeTab === 'biweekly' ? 'var(--color-brand)' : 'var(--color-bg-secondary)', 
+                    style={{
+                        flex: 1,
+                        background: activeTab === 'biweekly' ? 'var(--color-brand)' : 'var(--color-bg-secondary)',
                         color: activeTab === 'biweekly' ? '#fff' : 'var(--color-text-primary)',
                         border: `1px solid ${activeTab === 'biweekly' ? 'var(--color-brand)' : 'var(--border-color)'}`,
                         justifyContent: 'center'
@@ -194,8 +208,8 @@ export default function Contests() {
                                 <div style={{ fontSize: 11, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 4 }}>Last Tracked Contest</div>
                                 <div style={{ fontSize: 20, fontWeight: 800, color: 'var(--color-text-primary)', marginBottom: 4 }}>{latestContest.contest_name}</div>
                                 <div style={{ display: 'flex', gap: 16, fontSize: 13, color: 'var(--color-text-secondary)' }}>
-                                    <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-                                        <Calendar size={13} /> {latestContest.contest_date || 'Latest'}
+                                    <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 16, fontWeight: 700, color: 'var(--color-text-primary)' }}>
+                                        <Calendar size={15} /> {latestContest.contest_date || 'Latest'}
                                     </span>
                                     <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
                                         <Star size={13} /> {participated.length} participated
@@ -251,11 +265,16 @@ export default function Contests() {
                                             <td><span className="td-dept">{s.department || '—'}</span></td>
                                             <td>
                                                 {s.problems_solved !== null ? (
-                                                    <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: 14, color: getContestColor(s.problems_solved, s.contest_total || 4) }}>
-                                                        {s.problems_solved}/{s.contest_total || 4}
-                                                    </span>
+                                                    <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                                        <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--color-easy)' }}>✅ Registered</span>
+                                                        <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: 14, color: getContestColor(s.problems_solved, s.contest_total || 4) }}>
+                                                            {s.problems_solved}/{s.contest_total || 4} Solved
+                                                        </span>
+                                                    </div>
                                                 ) : (
-                                                    <span style={{ color: 'var(--color-text-muted)', fontSize: 13 }}>Did not attend</span>
+                                                    <span style={{ color: 'var(--color-error)', fontWeight: 600, fontSize: 13, padding: '4px 8px', background: 'rgba(239, 68, 68, 0.1)', borderRadius: 4 }}>
+                                                        ❌ Not Registered
+                                                    </span>
                                                 )}
                                             </td>
                                             <td className="td-rating">{s.contest_rating ? Math.round(s.contest_rating) : '—'}</td>

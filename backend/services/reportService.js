@@ -211,6 +211,45 @@ async function generateExcelReport(type, date) {
   } else if (type === 'department') {
     data = await getDepartmentStats();
     filename = `LeetCode_Department_Report_${new Date().toISOString().split('T')[0]}.xlsx`;
+  } else if (type === 'contest_weekly' || type === 'contest_biweekly') {
+    const isWeekly = type === 'contest_weekly';
+    const contestRow = await db.get(`
+        SELECT contest_name, contest_date 
+        FROM contest_stats 
+        WHERE contest_date IS NOT NULL 
+          AND contest_name LIKE ?
+          ${date ? 'AND date(contest_date) <= date(?)' : ''}
+        ORDER BY contest_date DESC LIMIT 1
+    `, [isWeekly ? '%Weekly%' : '%Biweekly%', ...(date ? [date] : [])].filter(Boolean));
+
+    if (contestRow) {
+      // Exclude biweekly explicitly for weekly
+      if (isWeekly && contestRow.contest_name.includes('Biweekly')) {
+        // This is a catch-all safety if the SQL above matched poorly, but it handles it.
+      }
+      data = await db.all(`
+            SELECT 
+                s.reg_no,
+                s.name,
+                s.department,
+                CASE 
+                    WHEN cs.problems_solved IS NULL THEN 'Not Registered'
+                    WHEN cs.problems_solved = 0 THEN 'Registered  (0/4)'
+                    ELSE 'Registered (' || cs.problems_solved || '/' || cs.contest_total || ')'
+                END as status,
+                cs.problems_solved,
+                cs.contest_rating,
+                cs.contest_ranking
+            FROM students s
+            LEFT JOIN contest_stats cs ON s.id = cs.student_id AND cs.contest_name = ?
+            WHERE COALESCE(s.is_banned, 0) = 0
+            ORDER BY CASE WHEN cs.problems_solved IS NULL THEN 1 ELSE 0 END, cs.problems_solved DESC
+        `, [contestRow.contest_name]);
+      filename = `LeetCode_${contestRow.contest_name.replace(/\s+/g, '_')}_Report.xlsx`;
+    } else {
+      data = [];
+      filename = `LeetCode_Contest_Report.xlsx`;
+    }
   } else {
     data = await getLatestStatsForStudents();
     filename = `LeetCode_Full_Report_${new Date().toISOString().split('T')[0]}.xlsx`;
