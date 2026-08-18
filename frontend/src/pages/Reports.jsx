@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { BarChart3, Download, FileText, Table, AlertCircle } from 'lucide-react';
-import { getDailyReport, exportExcel, exportCsv, getFetchErrors, clearFetchErrors, exportErrorsExcel, fixUrlsUpload } from '../services/api';
+import { getDailyReport, exportExcel, exportCsv, getFetchErrors, clearAllFetchErrors, exportErrorsExcel, fixUrls } from '../services/api';
 import { useDate } from '../context/DateContext';
 import toast from 'react-hot-toast';
 
@@ -157,8 +157,8 @@ export default function Reports() {
                                         try {
                                             const fd = new FormData();
                                             fd.append('file', file);
-                                            const r = await fixUrlsUpload(fd);
-                                            setFixResult(r);
+                                            const res = await fixUrls(fd);
+                                            setFixResult(res);
                                             // Refresh errors list
                                             getFetchErrors().then(res => setErrors(res.data || []));
                                         } catch (err) {
@@ -170,9 +170,11 @@ export default function Reports() {
                                 />
                                 <button className="btn btn-sm"
                                     style={{ background: 'var(--color-error, #ef4444)', color: '#fff', fontSize: 11, padding: '2px 10px', borderRadius: 6 }}
-                                    onClick={() => {
+                                    onClick={async () => {
                                         if (!window.confirm('Clear all fetch errors?')) return;
-                                        clearFetchErrors().then(() => { setErrors([]); setFixResult(null); });
+                                        await clearAllFetchErrors();
+                                        setErrors([]);
+                                        setFixResult(null);
                                     }}
                                 >
                                     🗑 Clear All
