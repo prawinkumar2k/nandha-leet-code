@@ -42,13 +42,14 @@ function extractUsername(profileUrl) {
 const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
 // Retry with exponential backoff
-async function retryRequest(fn, maxRetries = 2) {
+async function retryRequest(fn, maxRetries = 3) {
   for (let i = 0; i < maxRetries; i++) {
     try {
       return await fn();
     } catch (error) {
       if (i === maxRetries - 1) throw error;
-      await sleep(500);
+      console.log(`429 Rate Limit Hit - Backing off for ${Math.pow(2, i)} seconds`);
+      await sleep(1000 * (Math.pow(2, i))); // 1s, 2s, 4s
     }
   }
 }

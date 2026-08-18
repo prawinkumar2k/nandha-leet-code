@@ -213,8 +213,8 @@ router.post('/all', async (req, res) => {
 
     res.json({ success: true, message: `Starting refresh for ${students.length} students`, total: students.length });
 
-    const CONCURRENCY = 50;
-    const DELAY_BETWEEN_REQUESTS = 10;
+    const CONCURRENCY = 10;
+    const DELAY_BETWEEN_REQUESTS = 1000;
 
     (async () => {
         for (let i = 0; i < students.length; i += CONCURRENCY) {
