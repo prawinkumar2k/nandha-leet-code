@@ -20,7 +20,9 @@ export default function Versus() {
 
     useEffect(() => {
         if (student1_id) {
-            getStudent(student1_id).then(res => setStud1(res.latest)).catch(() => toast.error("Failed to fetch Student 1 limit data"));
+            getStudent(student1_id).then(res => {
+                setStud1(res.latest || { total_solved: 0, easy_solved: 0, medium_solved: 0, hard_solved: 0, today_solved: 0, yesterday_solved: 0, contest_solved: 0 });
+            }).catch(() => toast.error("Failed to fetch Student 1 data"));
         } else {
             setStud1(null);
         }
@@ -28,7 +30,9 @@ export default function Versus() {
 
     useEffect(() => {
         if (student2_id) {
-            getStudent(student2_id).then(res => setStud2(res.latest)).catch(() => toast.error("Failed to fetch Student 2 limit data"));
+            getStudent(student2_id).then(res => {
+                setStud2(res.latest || { total_solved: 0, easy_solved: 0, medium_solved: 0, hard_solved: 0, today_solved: 0, yesterday_solved: 0, contest_solved: 0 });
+            }).catch(() => toast.error("Failed to fetch Student 2 data"));
         } else {
             setStud2(null);
         }
