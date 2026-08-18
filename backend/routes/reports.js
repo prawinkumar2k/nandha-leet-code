@@ -172,6 +172,85 @@ router.get('/export-errors-excel', async (req, res) => {
         res.setHeader('Content-Disposition', 'attachment; filename="LEO_URL_Fix.xlsx"');
         res.send(buffer);
     } catch (error) {
+        console.error('Export Error:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// -------------- Feature 6: Contest Interval Tracking --------------
+
+router.get('/contest-intervals/list', async (req, res) => {
+    try {
+        const db = getDb();
+        const contests = await db.all(`
+            SELECT DISTINCT contest_name, MAX(contest_date) as date 
+            FROM contest_stats 
+            WHERE contest_name IS NOT NULL AND contest_name != 'Unknown'
+            GROUP BY contest_name 
+            ORDER BY date DESC
+        `);
+        res.json({ success: true, data: contests });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+});
+
+router.get('/contest-intervals/report', async (req, res) => {
+    try {
+        const db = getDb();
+        const { contestName } = req.query;
+        if (!contestName) return res.status(400).json({ success: false, message: 'contestName required' });
+
+        // Get all students who participated or at least are in the system and we know about their stats.
+        // We will just do a sweeping check. Let's find the `contest_date` first.
+        const contestInfo = await db.get(`SELECT MAX(contest_date) as cdate FROM contest_stats WHERE contest_name = ?`, [contestName]);
+        if (!contestInfo || !contestInfo.cdate) return res.json({ success: true, data: [] });
+
+        const endDateStr = contestInfo.cdate;
+        const eDate = new Date(endDateStr);
+        eDate.setDate(eDate.getDate() - 7);
+        const startDateStr = eDate.toISOString().split('T')[0];
+
+        // 1. Get End Totals <= endDateStr
+        const endStats = await db.all(`SELECT student_id, MAX(total_solved) as total FROM daily_stats WHERE date <= ? GROUP BY student_id`, [endDateStr]);
+        const endMap = {}; endStats.forEach(r => endMap[r.student_id] = r.total);
+
+        // 2. Get Start Totals <= startDateStr
+        const startStats = await db.all(`SELECT student_id, MAX(total_solved) as total FROM daily_stats WHERE date <= ? GROUP BY student_id`, [startDateStr]);
+        const startMap = {}; startStats.forEach(r => startMap[r.student_id] = r.total);
+
+        // 3. Get Contest Stats (how many they solved IN the contest)
+        const cStats = await db.all(`SELECT student_id, problems_solved FROM contest_stats WHERE contest_name = ?`, [contestName]);
+        const cMap = {}; cStats.forEach(r => cMap[r.student_id] = r.problems_solved);
+
+        // Combine
+        const students = await db.all(`SELECT id as student_id, reg_no, name, department, batch FROM students`);
+
+        const report = students.map(s => {
+            const startT = startMap[s.student_id] || 0;
+            const endT = endMap[s.student_id] || 0;
+            const solvedInGap = Math.max(0, endT - startT);
+            const solvedInContest = cMap[s.student_id] || 0;
+
+            return {
+                student_id: s.student_id,
+                reg_no: s.reg_no,
+                name: s.name,
+                department: s.department,
+                batch: s.batch,
+                gap_start: startDateStr,
+                gap_end: endDateStr,
+                solved_in_gap: solvedInGap,
+                solved_in_contest: solvedInContest,
+                participated: cMap.hasOwnProperty(s.student_id)
+            };
+        });
+
+        // Sort by highest gap solved first
+        report.sort((a, b) => b.solved_in_gap - a.solved_in_gap);
+
+        res.json({ success: true, data: report });
+    } catch (error) {
         res.status(500).json({ success: false, message: error.message });
     }
 });

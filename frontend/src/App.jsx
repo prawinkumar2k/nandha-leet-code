@@ -13,6 +13,7 @@ import Contests from './pages/Contests';
 import Reports from './pages/Reports';
 import Versus from './pages/Versus';
 import Leaderboards from './pages/Leaderboards';
+import ContestProgress from './pages/ContestProgress';
 import AuditLogs from './pages/AuditLogs';
 import SettingsPage from './pages/SettingsPage';
 import { checkHealth } from './services/api';
@@ -109,6 +110,7 @@ export default function App() {
                             <Route path="/departments" element={<DepartmentsPage />} />
                             <Route path="/contests" element={<Contests />} />
                             <Route path="/versus" element={<Versus />} />
+                            <Route path="/contest-progress" element={<ContestProgress />} />
                             <Route path="/leaderboards" element={<Leaderboards />} />
                             <Route path="/audit" element={<AuditLogs />} />
                             <Route path="/reports" element={<Reports />} />

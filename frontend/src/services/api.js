@@ -103,6 +103,13 @@ export const fixUrls = (formData) =>
 export const getAuditLogs = () =>
     axios.get(`${API_BASE}/audit`).then(r => r.data);
 
+// ---- Contest Intervals ----
+export const getContestIntervalLists = () =>
+    axios.get(`${API_BASE}/reports/contest-intervals/list`).then(r => r.data);
+
+export const getContestIntervalReport = (contestName) =>
+    axios.get(`${API_BASE}/reports/contest-intervals/report?contestName=${encodeURIComponent(contestName)}`).then(r => r.data);
+
 export const exportExcel = (type = 'daily', date) => {
     const params = new URLSearchParams({ type });
     if (date) params.append('date', date);
