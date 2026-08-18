@@ -87,6 +87,22 @@ async function initDb() {
             isDirty = true;
             saveDb();
         } catch (e) { }
+
+        try {
+            db.run(`
+                CREATE TABLE IF NOT EXISTS audit_logs (
+                  id INTEGER PRIMARY KEY AUTOINCREMENT,
+                  student_id INTEGER NOT NULL,
+                  type TEXT NOT NULL,
+                  details TEXT,
+                  timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+                  FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE
+                );
+            `);
+            console.log('Migration: Added audit_logs table');
+            isDirty = true;
+            saveDb();
+        } catch (e) { }
     } else {
         db = new sqlJs.Database();
 

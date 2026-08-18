@@ -12,6 +12,8 @@ import DepartmentsPage from './pages/DepartmentsPage';
 import Contests from './pages/Contests';
 import Reports from './pages/Reports';
 import Versus from './pages/Versus';
+import Leaderboards from './pages/Leaderboards';
+import AuditLogs from './pages/AuditLogs';
 import SettingsPage from './pages/SettingsPage';
 import { checkHealth } from './services/api';
 import { DateProvider } from './context/DateContext';
@@ -107,6 +109,8 @@ export default function App() {
                             <Route path="/departments" element={<DepartmentsPage />} />
                             <Route path="/contests" element={<Contests />} />
                             <Route path="/versus" element={<Versus />} />
+                            <Route path="/leaderboards" element={<Leaderboards />} />
+                            <Route path="/audit" element={<AuditLogs />} />
                             <Route path="/reports" element={<Reports />} />
                             <Route path="/settings" element={<SettingsPage />} />
                             <Route path="*" element={<Navigate to="/dashboard" replace />} />

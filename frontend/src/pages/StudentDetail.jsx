@@ -2,11 +2,12 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
     ArrowLeft, ExternalLink, RefreshCw, Edit2, Trophy,
-    Target, Zap, Globe, Star, TrendingUp, Calendar
+    Target, Zap, Globe, Star, TrendingUp, Calendar, BookOpen
 } from 'lucide-react';
 import {
     LineChart, Line, AreaChart, Area, BarChart, Bar, XAxis, YAxis,
-    CartesianGrid, Tooltip, Legend, ResponsiveContainer
+    CartesianGrid, Tooltip, Legend, ResponsiveContainer,
+    RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar
 } from 'recharts';
 import { getStudent, refreshStudent, verifyStudent, getHistoricStats } from '../services/api';
 import toast from 'react-hot-toast';
@@ -97,6 +98,12 @@ export default function StudentDetail() {
 
     // Prepare chart data (last 30 days, oldest first)
     const chartHistory = [...(history || [])].reverse().slice(0, 30);
+
+    const skillData = [
+        { subject: 'Fundamentals', A: student.fundamental_solved || 0, fullMark: 100 },
+        { subject: 'Intermediate', A: student.intermediate_solved || 0, fullMark: 100 },
+        { subject: 'Advanced', A: student.advanced_solved || 0, fullMark: 100 },
+    ];
 
     const initials = student.name?.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() || '??';
 
@@ -246,34 +253,61 @@ export default function StudentDetail() {
                         </div>
                     </div>
 
-                    {/* Total Solved Chart */}
-                    <div className="card">
-                        <div className="card-header">
-                            <div className="card-title">Total Problems Solved Over Time</div>
+                    {/* Recent Performance Details & Radar */}
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+                        {/* Skill Breakdown Radar Chart */}
+                        <div className="card">
+                            <div className="card-header">
+                                <div className="card-title"><BookOpen size={18} style={{ marginRight: 8, display: 'inline' }} /> DSA Skill Breakdown</div>
+                            </div>
+                            <div style={{ height: 250 }}>
+                                {(student?.fundamental_solved || student?.intermediate_solved || student?.advanced_solved) ? (
+                                    <ResponsiveContainer width="100%" height="100%">
+                                        <RadarChart cx="50%" cy="50%" outerRadius="70%" data={skillData}>
+                                            <PolarGrid stroke="#1e3a5f" />
+                                            <PolarAngleAxis dataKey="subject" tick={{ fill: '#94a3b8', fontSize: 11 }} />
+                                            <PolarRadiusAxis angle={30} domain={[0, 'dataMax + 10']} tick={false} axisLine={false} />
+                                            <Radar name="Solved" dataKey="A" stroke="var(--color-purple)" fill="var(--color-purple)" fillOpacity={0.5} />
+                                            <Tooltip contentStyle={{ backgroundColor: '#1e293b', borderColor: '#334155', borderRadius: 8 }} itemStyle={{ color: '#f8fafc' }} />
+                                        </RadarChart>
+                                    </ResponsiveContainer>
+                                ) : (
+                                    <div className="empty-state" style={{ height: '100%' }}>
+                                        <p style={{ color: 'var(--color-text-muted)', fontSize: 12 }}>No strict DSA tag classification available</p>
+                                    </div>
+                                )}
+                            </div>
                         </div>
-                        {chartHistory.length > 0 ? (
-                            <div style={{ height: 220 }}>
-                                <ResponsiveContainer width="100%" height="100%">
-                                    <AreaChart data={chartHistory}>
-                                        <defs>
-                                            <linearGradient id="gTotal" x1="0" y1="0" x2="0" y2="1">
-                                                <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.3} />
-                                                <stop offset="95%" stopColor="#f59e0b" stopOpacity={0} />
-                                            </linearGradient>
-                                        </defs>
-                                        <CartesianGrid strokeDasharray="3 3" stroke="#1e3a5f" />
-                                        <XAxis dataKey="date" tick={{ fill: '#64748b', fontSize: 10 }} />
-                                        <YAxis tick={{ fill: '#64748b', fontSize: 10 }} />
-                                        <Tooltip content={<CustomTooltip />} />
-                                        <Area type="monotone" dataKey="total_solved" name="Total Solved" stroke="#f59e0b" fill="url(#gTotal)" strokeWidth={2} dot={{ r: 3, strokeWidth: 2 }} />
-                                    </AreaChart>
-                                </ResponsiveContainer>
+
+                        {/* Total Solved Chart */}
+                        <div className="card">
+                            <div className="card-header">
+                                <div className="card-title">Total Problems Solved Over Time</div>
                             </div>
-                        ) : (
-                            <div className="empty-state" style={{ padding: 24 }}>
-                                <p style={{ color: 'var(--color-text-muted)', fontSize: 12 }}>Not enough historical data. Refresh data on multiple days to see trends.</p>
-                            </div>
-                        )}
+                            {chartHistory.length > 0 ? (
+                                <div style={{ height: 220 }}>
+                                    <ResponsiveContainer width="100%" height="100%">
+                                        <AreaChart data={chartHistory}>
+                                            <defs>
+                                                <linearGradient id="gTotal" x1="0" y1="0" x2="0" y2="1">
+                                                    <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.3} />
+                                                    <stop offset="95%" stopColor="#f59e0b" stopOpacity={0} />
+                                                </linearGradient>
+                                            </defs>
+                                            <CartesianGrid strokeDasharray="3 3" stroke="#1e3a5f" />
+                                            <XAxis dataKey="date" tick={{ fill: '#64748b', fontSize: 10 }} />
+                                            <YAxis tick={{ fill: '#64748b', fontSize: 10 }} />
+                                            <Tooltip content={<CustomTooltip />} />
+                                            <Area type="monotone" dataKey="total_solved" name="Total Solved" stroke="#f59e0b" fill="url(#gTotal)" strokeWidth={2} dot={{ r: 3, strokeWidth: 2 }} />
+                                        </AreaChart>
+                                    </ResponsiveContainer>
+                                </div>
+                            ) : (
+                                <div className="empty-state" style={{ padding: 24 }}>
+                                    <p style={{ color: 'var(--color-text-muted)', fontSize: 12 }}>Not enough historical data.</p>
+                                </div>
+                            )}
+                        </div>
                     </div>
 
                     {/* Easy/Medium/Hard Chart */}
@@ -303,28 +337,54 @@ export default function StudentDetail() {
                         )}
                     </div>
 
-                    {/* Daily submissions */}
-                    <div className="card">
-                        <div className="card-header">
-                            <div className="card-title">Daily Problems Solved</div>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+                        {/* Contest Rating Trends */}
+                        <div className="card">
+                            <div className="card-header">
+                                <div className="card-title"><Trophy size={18} style={{ marginRight: 8, display: 'inline', color: 'var(--color-brand)' }} /> Contest Rating Trends</div>
+                            </div>
+                            {chartHistory.some(c => c.contest_rating > 0) ? (
+                                <div style={{ height: 220 }}>
+                                    <ResponsiveContainer width="100%" height="100%">
+                                        <LineChart data={chartHistory}>
+                                            <CartesianGrid strokeDasharray="3 3" stroke="#1e3a5f" />
+                                            <XAxis dataKey="date" tick={{ fill: '#64748b', fontSize: 10 }} />
+                                            <YAxis tick={{ fill: '#64748b', fontSize: 10 }} domain={['auto', 'auto']} />
+                                            <Tooltip content={<CustomTooltip />} />
+                                            <Line type="monotone" dataKey="contest_rating" name="Rating" stroke="var(--color-brand)" strokeWidth={2} dot={{ r: 3 }} />
+                                        </LineChart>
+                                    </ResponsiveContainer>
+                                </div>
+                            ) : (
+                                <div className="empty-state" style={{ padding: 24 }}>
+                                    <p style={{ color: 'var(--color-text-muted)', fontSize: 12 }}>No contest participation recorded.</p>
+                                </div>
+                            )}
                         </div>
-                        {chartHistory.length > 0 ? (
-                            <div style={{ height: 180 }}>
-                                <ResponsiveContainer width="100%" height="100%">
-                                    <BarChart data={chartHistory}>
-                                        <CartesianGrid strokeDasharray="3 3" stroke="#1e3a5f" />
-                                        <XAxis dataKey="date" tick={{ fill: '#64748b', fontSize: 10 }} />
-                                        <YAxis tick={{ fill: '#64748b', fontSize: 10 }} />
-                                        <Tooltip content={<CustomTooltip />} />
-                                        <Bar dataKey="today_solved" name="Today Solved" fill="#3b82f6" radius={[3, 3, 0, 0]} />
-                                    </BarChart>
-                                </ResponsiveContainer>
+
+                        {/* Daily submissions */}
+                        <div className="card">
+                            <div className="card-header">
+                                <div className="card-title">Daily Problems Solved</div>
                             </div>
-                        ) : (
-                            <div className="empty-state" style={{ padding: 24 }}>
-                                <p style={{ color: 'var(--color-text-muted)', fontSize: 12 }}>No data.</p>
-                            </div>
-                        )}
+                            {chartHistory.length > 0 ? (
+                                <div style={{ height: 220 }}>
+                                    <ResponsiveContainer width="100%" height="100%">
+                                        <BarChart data={chartHistory}>
+                                            <CartesianGrid strokeDasharray="3 3" stroke="#1e3a5f" />
+                                            <XAxis dataKey="date" tick={{ fill: '#64748b', fontSize: 10 }} />
+                                            <YAxis tick={{ fill: '#64748b', fontSize: 10 }} />
+                                            <Tooltip content={<CustomTooltip />} />
+                                            <Bar dataKey="today_solved" name="Today Solved" fill="#3b82f6" radius={[3, 3, 0, 0]} />
+                                        </BarChart>
+                                    </ResponsiveContainer>
+                                </div>
+                            ) : (
+                                <div className="empty-state" style={{ padding: 24 }}>
+                                    <p style={{ color: 'var(--color-text-muted)', fontSize: 12 }}>No data.</p>
+                                </div>
+                            )}
+                        </div>
                     </div>
 
                     {/* History Table */}

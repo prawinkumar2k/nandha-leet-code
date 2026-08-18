@@ -77,10 +77,15 @@ async function processStudent(studentId, profileUrl, db) {
             let currentTags = student.admin_tags || '';
             if (!currentTags.includes('Suspicious_Spike')) {
                 const newTags = currentTags ? `${currentTags}, Suspicious_Spike` : 'Suspicious_Spike';
-                // Because we might also update tags in the later UPDATE, let's just make sure we merge it into data.badges logic below
-                // Actually, the easiest way is to modify the `data` object before the final UPDATE:
                 data.admin_tags = newTags;
             }
+
+            // Insert audit log
+            const detailMsg = todaySolved > 50
+                ? `Suspicious count jump: solved ${todaySolved} problems in one day.`
+                : `Total count shrunk: dropped from ${prevStats.total_solved} to ${data.total_solved}.`;
+
+            await db.run('INSERT INTO audit_logs (student_id, type, details) VALUES (?, ?, ?)', [studentId, 'SUSPICIOUS_SPIKE', detailMsg]);
         }
 
         // Upsert daily stats
@@ -144,9 +149,12 @@ async function processStudent(studentId, profileUrl, db) {
                     badges = coalesce(?, badges),
                     top_language = coalesce(?, top_language),
                     admin_tags = coalesce(?, admin_tags),
+                    fundamental_solved = coalesce(?, fundamental_solved),
+                    intermediate_solved = coalesce(?, intermediate_solved),
+                    advanced_solved = coalesce(?, advanced_solved),
                     updated_at = CURRENT_TIMESTAMP 
                 WHERE id = ?`,
-                [data.username || null, data.badges || null, data.top_language || null, data.admin_tags || null, studentId]
+                [data.username || null, data.badges || null, data.top_language || null, data.admin_tags || null, data.fundamental_solved, data.intermediate_solved, data.advanced_solved, studentId]
             );
         }
 

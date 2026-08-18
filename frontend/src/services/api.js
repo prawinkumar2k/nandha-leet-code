@@ -90,17 +90,18 @@ export const getDailyReport = (date) =>
 export const getFetchErrors = () =>
     axios.get(`${API_BASE}/reports/fetch-errors`).then(r => r.data);
 
-export const clearFetchErrors = () =>
+export const clearAllFetchErrors = () =>
     axios.delete(`${API_BASE}/reports/fetch-errors`).then(r => r.data);
 
-export const exportErrorsExcel = () => {
-    window.open(`${API_BASE}/reports/export-errors-excel`, '_blank');
-};
+export const exportErrorsExcel = () =>
+    `${API_BASE}/reports/export-errors-excel`;
 
-export const fixUrlsUpload = (formData) =>
-    axios.post(`${API_BASE}/import/fix-urls`, formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
-    }).then(r => r.data);
+export const fixUrls = (formData) =>
+    axios.post(`${API_BASE}/import/fix-urls`, formData, { headers: { 'Content-Type': 'multipart/form-data' } }).then(r => r.data);
+
+// ---- Auditing ----
+export const getAuditLogs = () =>
+    axios.get(`${API_BASE}/audit`).then(r => r.data);
 
 export const exportExcel = (type = 'daily', date) => {
     const params = new URLSearchParams({ type });

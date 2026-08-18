@@ -11,6 +11,9 @@ CREATE TABLE IF NOT EXISTS students (
   badges TEXT,
   top_language TEXT,
   admin_tags TEXT,
+  fundamental_solved INTEGER DEFAULT 0,
+  intermediate_solved INTEGER DEFAULT 0,
+  advanced_solved INTEGER DEFAULT 0,
   is_banned INTEGER DEFAULT 0,
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
@@ -58,11 +61,22 @@ CREATE TABLE IF NOT EXISTS contest_stats (
 -- Fetch errors log
 CREATE TABLE IF NOT EXISTS fetch_errors (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
-  reg_no TEXT,
-  student_name TEXT,
+  reg_no TEXT NOT NULL,
+  date TEXT NOT NULL,
+  error_message TEXT,
   profile_url TEXT,
-  error_reason TEXT,
-  error_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  resolved INTEGER DEFAULT 0,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Audit logs for tracking cheating/spikes
+CREATE TABLE IF NOT EXISTS audit_logs (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  student_id INTEGER NOT NULL,
+  type TEXT NOT NULL,
+  details TEXT,
+  timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE
 );
 
 -- App settings

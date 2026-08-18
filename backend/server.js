@@ -19,10 +19,10 @@ app.get('/api/health', (req, res) => {
 // Initialize database before routes
 const fs = require('fs');
 const debugLog = require('path').join(require('os').homedir(), 'Desktop', 'backend-debug.log');
-try { fs.writeFileSync(debugLog, 'Starting backend...\n'); } catch (e) {}
+try { fs.writeFileSync(debugLog, 'Starting backend...\n'); } catch (e) { }
 
 initDb().then(() => {
-    try { fs.appendFileSync(debugLog, 'DB initialized successfully\n'); } catch (e) {}
+    try { fs.appendFileSync(debugLog, 'DB initialized successfully\n'); } catch (e) { }
     console.log('DB initialized successfully');
 
     // Routes — registered after DB is ready
@@ -32,6 +32,7 @@ initDb().then(() => {
     app.use('/api/reports', require('./routes/reports'));
     app.use('/api/contests', require('./routes/contests'));
     app.use('/api/settings', require('./routes/settings'));
+    app.use('/api/audit', require('./routes/audit'));
 
     // Serve frontend build in production
     if (process.env.NODE_ENV === 'production') {
@@ -43,7 +44,7 @@ initDb().then(() => {
     }
 
 }).catch(err => {
-    try { fs.appendFileSync(debugLog, 'DB Init failed: ' + (err.stack || err) + '\n'); } catch (e) {}
+    try { fs.appendFileSync(debugLog, 'DB Init failed: ' + (err.stack || err) + '\n'); } catch (e) { }
     console.error('Failed to init DB:', err);
 });
 

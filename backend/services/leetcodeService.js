@@ -232,6 +232,11 @@ async function fetchStudentData(profileUrl) {
           languageName
           problemsSolved
         }
+        tagProblemCounts {
+          advanced { name problemsSolved }
+          intermediate { name problemsSolved }
+          fundamental { name problemsSolved }
+        }
         submitStatsGlobal {
           acSubmissionNum { difficulty count }
           totalSubmissionNum { difficulty count }
@@ -314,6 +319,14 @@ async function fetchStudentData(profileUrl) {
       }
     }
 
+    // Parse DSA skill tag counts
+    let fundamentalCount = 0;
+    let intermediateCount = 0;
+    let advancedCount = 0;
+    for (const item of user.tagProblemCounts?.fundamental || []) fundamentalCount += item.problemsSolved;
+    for (const item of user.tagProblemCounts?.intermediate || []) intermediateCount += item.problemsSolved;
+    for (const item of user.tagProblemCounts?.advanced || []) advancedCount += item.problemsSolved;
+
     // Parse contest data — userContestRanking is null for non-participants
     const contestRanking = d.userContestRanking || null;
     const contestHistory = (d.userContestRankingHistory || []).filter(c => c.attended);
@@ -360,7 +373,10 @@ async function fetchStudentData(profileUrl) {
       contest_solved: latestContest.solved,
       contest_total: latestContest.total,
       latest_contest: latestContest,
-      contest_history: contestHistory.slice(0, 20)
+      contest_history: contestHistory.slice(0, 20),
+      fundamental_solved: fundamentalCount,
+      intermediate_solved: intermediateCount,
+      advanced_solved: advancedCount
     };
   });
 }
