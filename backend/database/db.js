@@ -68,9 +68,25 @@ async function initDb() {
             console.log('Migration: Added `is_banned` column to students table');
             isDirty = true;
             saveDb();
-        } catch (e) {
-            // Likely already exists, ignore
-        }
+        } catch (e) { }
+
+        // Migrations for Advanced Tracking
+        try {
+            db.run(`ALTER TABLE students ADD COLUMN badges TEXT;`);
+            db.run(`ALTER TABLE students ADD COLUMN top_language TEXT;`);
+            db.run(`ALTER TABLE students ADD COLUMN admin_tags TEXT;`);
+            console.log('Migration: Added advanced tracking columns to students');
+            isDirty = true;
+            saveDb();
+        } catch (e) { }
+
+        try {
+            db.run(`ALTER TABLE daily_stats ADD COLUMN acceptance_rate REAL DEFAULT 0;`);
+            db.run(`ALTER TABLE daily_stats ADD COLUMN total_submissions INTEGER DEFAULT 0;`);
+            console.log('Migration: Added advanced tracking columns to daily_stats');
+            isDirty = true;
+            saveDb();
+        } catch (e) { }
     } else {
         db = new sqlJs.Database();
 

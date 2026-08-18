@@ -8,6 +8,9 @@ CREATE TABLE IF NOT EXISTS students (
   batch TEXT,
   leetcode_profile_url TEXT,
   leetcode_username TEXT,
+  badges TEXT,
+  top_language TEXT,
+  admin_tags TEXT,
   is_banned INTEGER DEFAULT 0,
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
@@ -28,6 +31,8 @@ CREATE TABLE IF NOT EXISTS daily_stats (
   contest_total INTEGER DEFAULT 4,
   contest_rating REAL DEFAULT 0,
   global_ranking INTEGER DEFAULT 0,
+  acceptance_rate REAL DEFAULT 0,
+  total_submissions INTEGER DEFAULT 0,
   data_source TEXT DEFAULT 'automatic',
   fetched_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE,

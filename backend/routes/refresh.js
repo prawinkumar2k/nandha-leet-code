@@ -63,13 +63,33 @@ async function processStudent(studentId, profileUrl, db) {
             yesterdaySolved = data.recent_yesterday || 0;
         }
 
+        // Feature 7: Suspicious Spike Detection
+        let suspicious = false;
+        if (prevStats && data.total_solved < prevStats.total_solved) {
+            suspicious = true;
+        }
+        if (todaySolved > 50) {
+            suspicious = true;
+        }
+
+        if (suspicious) {
+            const student = await db.get('SELECT admin_tags FROM students WHERE id = ?', [studentId]);
+            let currentTags = student.admin_tags || '';
+            if (!currentTags.includes('Suspicious_Spike')) {
+                const newTags = currentTags ? `${currentTags}, Suspicious_Spike` : 'Suspicious_Spike';
+                // Because we might also update tags in the later UPDATE, let's just make sure we merge it into data.badges logic below
+                // Actually, the easiest way is to modify the `data` object before the final UPDATE:
+                data.admin_tags = newTags;
+            }
+        }
+
         // Upsert daily stats
         await db.run(`
       INSERT INTO daily_stats 
         (student_id, date, total_solved, easy_solved, medium_solved, hard_solved,
          yesterday_solved, today_solved, contest_solved, contest_total, 
-         contest_rating, global_ranking, data_source, fetched_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'automatic', CURRENT_TIMESTAMP)
+         contest_rating, global_ranking, acceptance_rate, total_submissions, data_source, fetched_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'automatic', CURRENT_TIMESTAMP)
       ON CONFLICT(student_id, date) DO UPDATE SET
         total_solved = excluded.total_solved,
         easy_solved = excluded.easy_solved,
@@ -81,6 +101,8 @@ async function processStudent(studentId, profileUrl, db) {
         contest_total = excluded.contest_total,
         contest_rating = excluded.contest_rating,
         global_ranking = excluded.global_ranking,
+        acceptance_rate = excluded.acceptance_rate,
+        total_submissions = excluded.total_submissions,
         data_source = 'automatic',
         fetched_at = CURRENT_TIMESTAMP
     `, [
@@ -88,7 +110,8 @@ async function processStudent(studentId, profileUrl, db) {
             data.total_solved, data.easy_solved, data.medium_solved, data.hard_solved,
             yesterdaySolved, todaySolved,
             data.contest_solved, data.contest_total,
-            data.contest_rating, data.global_ranking
+            data.contest_rating, data.global_ranking,
+            data.acceptance_rate || 0, data.total_submissions || 0
         ]);
 
         // Update contest stats if we have contest data
@@ -114,8 +137,17 @@ async function processStudent(studentId, profileUrl, db) {
             ]);
         }
 
-        if (data.username) {
-            await db.run('UPDATE students SET leetcode_username = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?', [data.username, studentId]);
+        if (data.username || data.badges || data.top_language || data.admin_tags) {
+            await db.run(`
+                UPDATE students 
+                SET leetcode_username = coalesce(?, leetcode_username),
+                    badges = coalesce(?, badges),
+                    top_language = coalesce(?, top_language),
+                    admin_tags = coalesce(?, admin_tags),
+                    updated_at = CURRENT_TIMESTAMP 
+                WHERE id = ?`,
+                [data.username || null, data.badges || null, data.top_language || null, data.admin_tags || null, studentId]
+            );
         }
 
         return { success: true };

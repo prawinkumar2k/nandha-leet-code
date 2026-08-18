@@ -227,11 +227,14 @@ async function fetchStudentData(profileUrl) {
     query getCombinedData($username: String!) {
       matchedUser(username: $username) {
         username
+        badges { name }
+        languageProblemCount {
+          languageName
+          problemsSolved
+        }
         submitStatsGlobal {
-          acSubmissionNum {
-            difficulty
-            count
-          }
+          acSubmissionNum { difficulty count }
+          totalSubmissionNum { difficulty count }
         }
         profile {
           ranking
@@ -273,7 +276,7 @@ async function fetchStudentData(profileUrl) {
     const user = d.matchedUser;
     if (!user) throw new Error(`User "${username}" not found on LeetCode`);
 
-    // Parse solved stats
+    // Parse solved stats and submission stats
     const stats = { total: 0, easy: 0, medium: 0, hard: 0 };
     for (const stat of user.submitStatsGlobal?.acSubmissionNum || []) {
       const diff = stat.difficulty?.toLowerCase();
@@ -283,6 +286,33 @@ async function fetchStudentData(profileUrl) {
       else if (diff === 'hard') stats.hard = stat.count;
     }
     if (stats.total === 0) stats.total = stats.easy + stats.medium + stats.hard;
+
+    let totalSubmissionsCount = 0;
+    for (const stat of user.submitStatsGlobal?.totalSubmissionNum || []) {
+      if (stat.difficulty?.toLowerCase() === 'all') {
+        totalSubmissionsCount = stat.count;
+        break;
+      }
+    }
+
+    let acceptance_rate = 0;
+    if (totalSubmissionsCount > 0) {
+      acceptance_rate = (stats.total / totalSubmissionsCount) * 100;
+    }
+
+    // Parse Badges
+    const badgesArray = (user.badges || []).map(b => b.name);
+    const badgesString = JSON.stringify(badgesArray);
+
+    // Parse Top Language
+    let topLanguage = '';
+    let maxLangSolved = 0;
+    for (const lang of user.languageProblemCount || []) {
+      if (lang.problemsSolved > maxLangSolved) {
+        maxLangSolved = lang.problemsSolved;
+        topLanguage = lang.languageName;
+      }
+    }
 
     // Parse contest data — userContestRanking is null for non-participants
     const contestRanking = d.userContestRanking || null;
@@ -315,6 +345,10 @@ async function fetchStudentData(profileUrl) {
 
     return {
       username,
+      badges: badgesString,
+      top_language: topLanguage,
+      acceptance_rate: Number(acceptance_rate.toFixed(2)),
+      total_submissions: totalSubmissionsCount,
       total_solved: stats.total,
       easy_solved: stats.easy,
       medium_solved: stats.medium,

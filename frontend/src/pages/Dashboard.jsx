@@ -152,6 +152,27 @@ export default function Dashboard() {
                         <StatCard icon={Trophy} label="Contest Solved" value={summary?.contest_solved} color="brand" sub={`${summary?.students_active_contest || 0} students`} />
                     </div>
 
+                    {/* Global Target Tracking */}
+                    {summary?.total_students > 0 && (
+                        <div className="card" style={{ marginBottom: 20 }}>
+                            <div className="card-header">
+                                <div className="card-title">🎯 Global Target: {summary.target_problems} Problems</div>
+                                <div className="card-subtitle">{summary.students_at_target} out of {summary.total_students} students have reached the goal</div>
+                            </div>
+                            <div style={{ position: 'relative', height: 24, backgroundColor: 'var(--color-bg-secondary)', borderRadius: 12, overflow: 'hidden' }}>
+                                <div style={{
+                                    position: 'absolute', top: 0, left: 0, bottom: 0,
+                                    width: `${Math.min(100, (summary.students_at_target / summary.total_students) * 100)}%`,
+                                    backgroundColor: 'var(--color-easy)',
+                                    transition: 'width 1s ease-in-out'
+                                }}></div>
+                                <div style={{ position: 'absolute', width: '100%', textAlign: 'center', color: 'White', fontSize: 12, fontWeight: 700, lineHeight: '24px', textShadow: '0 1px 2px rgba(0,0,0,0.5)' }}>
+                                    {Math.round((summary.students_at_target / summary.total_students) * 100)}% Completed
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
                     {/* Secondary Stats */}
                     <div className="stat-cards" style={{ marginBottom: 20 }}>
                         <StatCard icon={Activity} label="Total Easy" value={summary?.total_easy} color="easy" />

@@ -139,6 +139,8 @@ export default function Students() {
         { key: 'name', label: 'Student Name', sortable: true },
         { key: 'department', label: 'Department', sortable: false },
         { key: 'batch', label: 'Batch', sortable: false },
+        { key: 'top_language', label: 'Language', sortable: false },
+        { key: 'badges', label: 'Badges', sortable: false },
         { key: 'total_solved', label: 'Total', sortable: true },
         { key: 'easy_solved', label: 'Easy', sortable: true },
         { key: 'medium_solved', label: 'Medium', sortable: true },
@@ -188,7 +190,7 @@ export default function Students() {
                         onChange={e => setSearch(e.target.value)}
                     />
                 </div>
-                
+
                 <select className="form-select" style={{ width: 140 }} value={showBanned ? 'true' : 'false'} onChange={e => setShowBanned(e.target.value === 'true')}>
                     <option value="false">Active Students</option>
                     <option value="true">Banned Students</option>
@@ -259,9 +261,24 @@ export default function Students() {
                                         </span>
                                     </td>
                                     <td><span className="td-reg">{s.reg_no}</span></td>
-                                    <td><span className="td-name">{s.name}</span></td>
+                                    <td>
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                                            <span className="td-name">{s.name}</span>
+                                            {s.admin_tags && (
+                                                <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+                                                    {s.admin_tags.split(',').map(t => t.trim()).filter(Boolean).map(tag => (
+                                                        <span key={tag} style={{ fontSize: 9, padding: '2px 6px', backgroundColor: 'rgba(59,130,246,0.2)', color: '#60a5fa', border: '1px solid rgba(59,130,246,0.3)', borderRadius: 4, fontWeight: 500 }}>
+                                                            {tag}
+                                                        </span>
+                                                    ))}
+                                                </div>
+                                            )}
+                                        </div>
+                                    </td>
                                     <td><span className="td-dept">{s.department || '—'}</span></td>
                                     <td><span className="td-dept" style={{ color: 'var(--color-purple)' }}>{s.batch || '—'}</span></td>
+                                    <td><span className="td-dept" style={{ color: 'var(--color-brand)' }}>{s.top_language || '—'}</span></td>
+                                    <td><span className="td-dept" style={{ fontWeight: 600 }}>{(() => { try { return JSON.parse(s.badges).length || '—'; } catch { return '—'; } })()}</span></td>
                                     <td style={{ fontFamily: 'var(--font-mono)', fontWeight: 700 }}>{(s.total_solved || 0).toLocaleString()}</td>
                                     <td><span className="td-easy">{s.easy_solved || 0}</span></td>
                                     <td><span className="td-medium">{s.medium_solved || 0}</span></td>

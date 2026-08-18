@@ -137,3 +137,6 @@ export const backupDatabase = () =>
 
 export const getBackups = () =>
     axios.get(`${API_BASE}/settings/backups`).then(r => r.data);
+
+export const getHistoricStats = (id) =>
+    axios.get(`${API_BASE}/students/historic-stats/${id}`).then(r => r.data);

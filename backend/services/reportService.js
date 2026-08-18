@@ -7,6 +7,9 @@ async function getDashboardSummary(date) {
 
   const targetDate = date || new Date().toISOString().split('T')[0];
 
+  const settingsRows = await db.all('SELECT value FROM app_settings WHERE key = ?', ['target_problems']);
+  const targetProblems = settingsRows.length > 0 ? parseInt(settingsRows[0].value, 10) : 200;
+
   const stats = await db.get(`
     SELECT 
       COUNT(DISTINCT s.id) as total_students,
@@ -22,11 +25,12 @@ async function getDashboardSummary(date) {
       SUM(ds.hard_solved) as total_hard,
       AVG(ds.total_solved) as avg_problems,
       AVG(CASE WHEN ds.contest_rating > 0 THEN ds.contest_rating ELSE NULL END) as avg_contest_rating,
-      MIN(CASE WHEN ds.global_ranking > 0 THEN ds.global_ranking ELSE NULL END) as best_global_ranking
+      MIN(CASE WHEN ds.global_ranking > 0 THEN ds.global_ranking ELSE NULL END) as best_global_ranking,
+      SUM(CASE WHEN ds.total_solved >= ? THEN 1 ELSE 0 END) as students_at_target
     FROM students s
     LEFT JOIN daily_stats ds ON s.id = ds.student_id AND ds.date = ?
     WHERE COALESCE(s.is_banned, 0) = 0
-  `, [targetDate]);
+  `, [targetProblems, targetDate]);
 
   return {
     ...stats,
@@ -44,7 +48,9 @@ async function getDashboardSummary(date) {
     total_hard: stats.total_hard || 0,
     avg_problems: Math.round(stats.avg_problems || 0),
     avg_contest_rating: Math.round(stats.avg_contest_rating || 0),
-    best_global_ranking: stats.best_global_ranking || 0
+    best_global_ranking: stats.best_global_ranking || 0,
+    target_problems: targetProblems,
+    students_at_target: stats.students_at_target || 0
   };
 }
 

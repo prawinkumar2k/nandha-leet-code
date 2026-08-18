@@ -8,7 +8,7 @@ import {
     LineChart, Line, AreaChart, Area, BarChart, Bar, XAxis, YAxis,
     CartesianGrid, Tooltip, Legend, ResponsiveContainer
 } from 'recharts';
-import { getStudent, refreshStudent, verifyStudent } from '../services/api';
+import { getStudent, refreshStudent, verifyStudent, getHistoricStats } from '../services/api';
 import toast from 'react-hot-toast';
 import ManualEditModal from '../components/ManualEditModal';
 
@@ -37,6 +37,16 @@ export default function StudentDetail() {
     const [activeTab, setActiveTab] = useState('overview');
     const [verifyData, setVerifyData] = useState(null);
     const [verifying, setVerifying] = useState(false);
+    const [heatmapData, setHeatmapData] = useState([]);
+
+    const loadHeatmap = async () => {
+        try {
+            const hStats = await getHistoricStats(id);
+            setHeatmapData(hStats.data || []);
+        } catch (e) {
+            console.error("Failed to load historic stats");
+        }
+    };
 
     const load = async () => {
         setLoading(true);
@@ -50,7 +60,7 @@ export default function StudentDetail() {
         }
     };
 
-    useEffect(() => { load(); }, [id]);
+    useEffect(() => { load(); loadHeatmap(); }, [id]);
 
     const handleRefresh = async () => {
         setRefreshing(true);
@@ -114,6 +124,19 @@ export default function StudentDetail() {
                                 @{student.leetcode_username}
                             </span>
                         )}
+                        <span className="student-meta-item">
+                            <Globe size={12} />
+                            {student.top_language || 'General'}
+                        </span>
+                        {student.badges && student.badges !== '[]' && (
+                            <span className="student-meta-item" style={{ color: 'var(--color-brand)' }}>
+                                <Trophy size={12} />
+                                {(() => {
+                                    try { return JSON.parse(student.badges).length; }
+                                    catch { return 0; }
+                                })()} Badges
+                            </span>
+                        )}
                         {latest?.stat_date && (
                             <span className="student-meta-item">
                                 <Calendar size={12} />
@@ -146,6 +169,7 @@ export default function StudentDetail() {
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: 12, marginBottom: 20 }}>
                 {[
                     { label: 'Total Solved', value: latest?.total_solved || 0, color: 'var(--color-text-primary)' },
+                    { label: 'Acceptance Rate', value: latest?.acceptance_rate ? `${latest.acceptance_rate}%` : '—', color: (latest?.acceptance_rate >= 70 ? 'var(--color-easy)' : latest?.acceptance_rate >= 40 ? 'var(--color-medium)' : 'var(--color-hard)') },
                     { label: 'Easy', value: latest?.easy_solved || 0, color: 'var(--color-easy)' },
                     { label: 'Medium', value: latest?.medium_solved || 0, color: 'var(--color-medium)' },
                     { label: 'Hard', value: latest?.hard_solved || 0, color: 'var(--color-hard)' },
@@ -180,6 +204,48 @@ export default function StudentDetail() {
 
             {activeTab === 'overview' && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                    {/* Consistency Heatmap */}
+                    <div className="card">
+                        <div className="card-header">
+                            <div className="card-title">Activity Last 365 Days</div>
+                        </div>
+                        <div style={{ overflowX: 'auto', padding: '10px 0' }}>
+                            <div style={{ display: 'grid', gridTemplateRows: 'repeat(7, 10px)', gridAutoFlow: 'column', gap: 3, paddingBottom: 10 }}>
+                                {Array.from({ length: 365 }).map((_, i) => {
+                                    const d = new Date();
+                                    d.setDate(d.getDate() - (364 - i));
+                                    const dateStr = d.toISOString().split('T')[0];
+                                    const record = heatmapData.find(x => x.date === dateStr);
+                                    const count = record ? record.today_solved : 0;
+
+                                    let level = 'var(--color-bg-secondary)'; // 0 solved
+                                    if (count > 0 && count <= 2) level = 'rgba(16, 185, 129, 0.3)'; // light green
+                                    else if (count > 2 && count <= 5) level = 'rgba(16, 185, 129, 0.6)';
+                                    else if (count > 5) level = 'rgba(16, 185, 129, 1)'; // full green
+
+                                    return (
+                                        <div
+                                            key={i}
+                                            title={`${dateStr}: ${count} problems solved`}
+                                            style={{
+                                                width: 10, height: 10, backgroundColor: level,
+                                                borderRadius: 2, border: count === 0 ? '1px solid rgba(255,255,255,0.05)' : 'none'
+                                            }}
+                                        />
+                                    );
+                                })}
+                            </div>
+                            <div style={{ display: 'flex', justifyContent: 'flex-end', fontSize: 10, color: 'var(--color-text-muted)', gap: 4, alignItems: 'center' }}>
+                                Less
+                                <span style={{ width: 10, height: 10, background: 'var(--color-bg-secondary)', borderRadius: 2 }}></span>
+                                <span style={{ width: 10, height: 10, background: 'rgba(16, 185, 129, 0.3)', borderRadius: 2 }}></span>
+                                <span style={{ width: 10, height: 10, background: 'rgba(16, 185, 129, 0.6)', borderRadius: 2 }}></span>
+                                <span style={{ width: 10, height: 10, background: 'rgba(16, 185, 129, 1)', borderRadius: 2 }}></span>
+                                More
+                            </div>
+                        </div>
+                    </div>
+
                     {/* Total Solved Chart */}
                     <div className="card">
                         <div className="card-header">

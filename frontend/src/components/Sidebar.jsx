@@ -9,6 +9,7 @@ const navItems = [
     { to: '/students', icon: Users, label: 'Students' },
     { to: '/reports', icon: BarChart3, label: 'Reports' },
     { to: '/contests', icon: Trophy, label: 'Contests' },
+    { to: '/versus', icon: FileText, label: 'Versus' },
     { to: '/departments', icon: Building2, label: 'Departments' },
     { to: '/import', icon: Upload, label: 'Import Excel' },
     { to: '/settings', icon: Settings, label: 'Settings' },

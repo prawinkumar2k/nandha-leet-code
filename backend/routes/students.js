@@ -17,6 +17,9 @@ router.get('/', async (req, res) => {
         s.batch,
         s.leetcode_profile_url,
         s.leetcode_username,
+        s.badges,
+        s.top_language,
+        s.admin_tags,
         s.created_at,
         s.updated_at,
         COALESCE(s.is_banned, 0) as is_banned,
@@ -29,6 +32,8 @@ router.get('/', async (req, res) => {
         COALESCE(ds.today_solved, 0) as today_solved,
         COALESCE(ds.contest_solved, 0) as contest_solved,
         COALESCE(ds.contest_total, 4) as contest_total,
+        COALESCE(ds.acceptance_rate, 0) as acceptance_rate,
+        COALESCE(ds.total_submissions, 0) as total_submissions,
         COALESCE(ds.contest_rating, 0) as contest_rating,
         COALESCE(ds.global_ranking, 0) as global_ranking,
         ds.fetched_at,
@@ -203,7 +208,7 @@ router.put('/:id/ban', async (req, res) => {
     try {
         const db = getDb();
         const { is_banned } = req.body;
-        
+
         await db.run('UPDATE students SET is_banned = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?', [is_banned ? 1 : 0, req.params.id]);
         res.json({ success: true, message: `Student ${is_banned ? 'banned' : 'unbanned'} successfully` });
     } catch (error) {
@@ -237,14 +242,14 @@ router.delete('/:id', async (req, res) => {
 router.patch('/:id', async (req, res) => {
     try {
         const db = getDb();
-        const { reg_no, name, department, batch, leetcode_profile_url } = req.body;
+        const { reg_no, name, department, batch, leetcode_profile_url, admin_tags } = req.body;
 
         const username = leetcode_profile_url ? (leetcode_profile_url.split('/u/')[1] || leetcode_profile_url.split('.com/')[1] || '').replace('/', '') : null;
 
         await db.run(`
-      UPDATE students SET reg_no = ?, name = ?, department = ?, batch = ?, leetcode_profile_url = ?, leetcode_username = ?, updated_at = CURRENT_TIMESTAMP
+      UPDATE students SET reg_no = ?, name = ?, department = ?, batch = ?, leetcode_profile_url = ?, leetcode_username = ?, admin_tags = ?, updated_at = CURRENT_TIMESTAMP
       WHERE id = ?
-    `, [reg_no, name, department, batch || null, leetcode_profile_url, username, req.params.id]);
+    `, [reg_no, name, department, batch || null, leetcode_profile_url, username, admin_tags || null, req.params.id]);
         res.json({ success: true, message: 'Student updated successfully' });
     } catch (error) {
         if (error.message.includes('UNIQUE')) {
@@ -305,6 +310,21 @@ router.get('/sample/insert', async (req, res) => {
         }
 
         res.json({ success: true, message: 'Sample data inserted' });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+});
+
+router.get('/historic-stats/:id', async (req, res) => {
+    try {
+        const db = getDb();
+        const historic = await db.all(`
+            SELECT date, today_solved 
+            FROM daily_stats 
+            WHERE student_id = ? AND date >= date('now', '-365 days') 
+            ORDER BY date ASC
+        `, [req.params.id]);
+        res.json({ success: true, data: historic });
     } catch (error) {
         res.status(500).json({ success: false, message: error.message });
     }

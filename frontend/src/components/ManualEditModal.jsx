@@ -11,7 +11,8 @@ export default function StudentDataModal({ student, onClose, onSaved }) {
         name: student?.name || '',
         department: student?.department || '',
         batch: student?.batch || '',
-        leetcode_profile_url: student?.leetcode_profile_url || ''
+        leetcode_profile_url: student?.leetcode_profile_url || '',
+        admin_tags: student?.admin_tags || ''
     });
     const [saving, setSaving] = useState(false);
 
@@ -107,6 +108,16 @@ export default function StudentDataModal({ student, onClose, onSaved }) {
                             value={form.leetcode_profile_url}
                             placeholder="https://leetcode.com/u/username"
                             onChange={e => handleChange('leetcode_profile_url', e.target.value)}
+                        />
+                    </div>
+                    <div className="form-group">
+                        <label className="form-label" style={{ color: 'var(--color-text-primary)' }}>🏷️ Admin Tags (Comma separated)</label>
+                        <input
+                            type="text"
+                            className="form-input"
+                            value={form.admin_tags}
+                            placeholder="e.g. Needs_Help, Placement_Ready"
+                            onChange={e => handleChange('admin_tags', e.target.value)}
                         />
                     </div>
                 </div>
