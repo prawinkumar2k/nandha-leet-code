@@ -248,6 +248,24 @@ router.post('/student/:id', async (req, res) => {
     }
 });
 
+router.get('/verify/:id', async (req, res) => {
+    const db = getDb();
+    const student = await db.get('SELECT * FROM students WHERE id = ?', [req.params.id]);
+    if (!student) return res.status(404).json({ success: false, message: 'Student not found' });
+    if (!student.leetcode_profile_url) return res.status(400).json({ success: false, message: 'No LeetCode URL set' });
+
+    try {
+        const live = await fetchStudentData(student.leetcode_profile_url);
+        const stored = await db.get(
+            'SELECT * FROM daily_stats WHERE student_id = ? ORDER BY date DESC LIMIT 1',
+            [student.id]
+        );
+        res.json({ success: true, live, stored: stored || null });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+});
+
 router.post('/stop', (req, res) => {
     if (refreshState.isRunning) {
         refreshState.isRunning = false;

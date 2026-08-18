@@ -8,7 +8,7 @@ import {
     LineChart, Line, AreaChart, Area, BarChart, Bar, XAxis, YAxis,
     CartesianGrid, Tooltip, Legend, ResponsiveContainer
 } from 'recharts';
-import { getStudent, refreshStudent } from '../services/api';
+import { getStudent, refreshStudent, verifyStudent } from '../services/api';
 import toast from 'react-hot-toast';
 import ManualEditModal from '../components/ManualEditModal';
 
@@ -35,6 +35,8 @@ export default function StudentDetail() {
     const [refreshing, setRefreshing] = useState(false);
     const [editing, setEditing] = useState(false);
     const [activeTab, setActiveTab] = useState('overview');
+    const [verifyData, setVerifyData] = useState(null);
+    const [verifying, setVerifying] = useState(false);
 
     const load = async () => {
         setLoading(true);
@@ -170,6 +172,9 @@ export default function StudentDetail() {
                 </button>
                 <button className={`tab${activeTab === 'ranking' ? ' active' : ''}`} onClick={() => setActiveTab('ranking')}>
                     🌐 Ranking History
+                </button>
+                <button className={`tab${activeTab === 'verify' ? ' active' : ''}`} onClick={() => setActiveTab('verify')}>
+                    🔍 Verify Data
                 </button>
             </div>
 
@@ -371,6 +376,110 @@ export default function StudentDetail() {
                             </tbody>
                         </table>
                     </div>
+                </div>
+            )}
+
+            {activeTab === 'verify' && (
+                <div className="card">
+                    <div className="card-header" style={{ marginBottom: 12 }}>
+                        <div>
+                            <div className="card-title">🔍 Data Verification</div>
+                            <p style={{ fontSize: 12, color: 'var(--color-text-muted)', marginTop: 4 }}>
+                                Fetches live data from LeetCode and compares with what LEO has stored.
+                            </p>
+                        </div>
+                        <button
+                            className="btn btn-primary btn-sm"
+                            disabled={verifying}
+                            onClick={async () => {
+                                setVerifying(true);
+                                setVerifyData(null);
+                                try {
+                                    const r = await verifyStudent(id);
+                                    setVerifyData(r);
+                                } catch (e) {
+                                    setVerifyData({ error: e.response?.data?.message || e.message });
+                                } finally {
+                                    setVerifying(false);
+                                }
+                            }}
+                        >
+                            {verifying ? <><div className="spinner" style={{ width: 12, height: 12 }} /> Fetching...</> : '⚡ Run Verify'}
+                        </button>
+                    </div>
+
+                    {!verifyData && !verifying && (
+                        <div className="empty-state" style={{ padding: 32 }}>
+                            <div style={{ fontSize: 32, marginBottom: 8 }}>🔍</div>
+                            <div className="empty-state-title">Click "Run Verify" to check</div>
+                            <div className="empty-state-desc">Compares LEO's stored data with live LeetCode data</div>
+                        </div>
+                    )}
+
+                    {verifyData?.error && (
+                        <div className="alert alert-error" style={{ marginTop: 8 }}>
+                            ❌ {verifyData.error}
+                        </div>
+                    )}
+
+                    {verifyData && !verifyData.error && (() => {
+                        const { live, stored } = verifyData;
+                        const rows = [
+                            { label: 'Total Solved', live: live.total_solved, stored: stored?.total_solved },
+                            { label: 'Easy Solved', live: live.easy_solved, stored: stored?.easy_solved },
+                            { label: 'Medium Solved', live: live.medium_solved, stored: stored?.medium_solved },
+                            { label: 'Hard Solved', live: live.hard_solved, stored: stored?.hard_solved },
+                            { label: 'Contest Rating', live: live.contest_rating ? Math.round(live.contest_rating) : 0, stored: stored?.contest_rating ? Math.round(stored.contest_rating) : 0 },
+                            { label: 'Global Ranking', live: live.global_ranking, stored: stored?.global_ranking },
+                            { label: 'Latest Contest Solved', live: live.contest_solved, stored: stored?.contest_solved },
+                        ];
+                        const allMatch = rows.every(r => String(r.live) === String(r.stored ?? ''));
+                        return (
+                            <div>
+                                <div className={`alert ${allMatch ? 'alert-success' : 'alert-warn'}`} style={{ marginBottom: 12 }}>
+                                    {allMatch
+                                        ? '✅ All data matches! LEO data is accurate.'
+                                        : '⚠️ Some values differ between LEO and LeetCode live data. Refresh to sync.'}
+                                </div>
+                                <div className="table-wrapper">
+                                    <table>
+                                        <thead>
+                                            <tr>
+                                                <th>Field</th>
+                                                <th>🌐 LeetCode (Live)</th>
+                                                <th>💾 LEO (Stored)</th>
+                                                <th>Status</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {rows.map(row => {
+                                                const match = String(row.live) === String(row.stored ?? '');
+                                                return (
+                                                    <tr key={row.label} style={!match ? { background: 'rgba(239,68,68,0.07)' } : {}}>
+                                                        <td style={{ fontWeight: 600, fontSize: 13 }}>{row.label}</td>
+                                                        <td style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, color: 'var(--color-brand)' }}>
+                                                            {row.live ?? '—'}
+                                                        </td>
+                                                        <td style={{ fontFamily: 'var(--font-mono)', color: match ? 'var(--color-text-primary)' : 'var(--color-hard)' }}>
+                                                            {row.stored ?? '—'}
+                                                        </td>
+                                                        <td>
+                                                            {match
+                                                                ? <span style={{ color: 'var(--color-easy)', fontWeight: 700 }}>✅ Match</span>
+                                                                : <span style={{ color: 'var(--color-hard)', fontWeight: 700 }}>⚠️ Mismatch</span>}
+                                                        </td>
+                                                    </tr>
+                                                );
+                                            })}
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <div style={{ marginTop: 10, fontSize: 11, color: 'var(--color-text-muted)' }}>
+                                    Live data fetched at: {new Date().toLocaleString()} • Stored data from: {stored?.date || 'N/A'}
+                                </div>
+                            </div>
+                        );
+                    })()}
                 </div>
             )}
 

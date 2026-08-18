@@ -62,6 +62,9 @@ export const refreshStudent = (id) =>
 export const stopRefresh = () =>
     axios.post(`${API_BASE}/refresh/stop`).then(r => r.data);
 
+export const verifyStudent = (id) =>
+    axios.get(`${API_BASE}/refresh/verify/${id}`).then(r => r.data);
+
 // ---- Reports ----
 export const getDashboardSummary = (date) =>
     axios.get(`${API_BASE}/reports/dashboard`, { params: { date } }).then(r => r.data);
