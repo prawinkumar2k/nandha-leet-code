@@ -87,6 +87,9 @@ export const getDailyReport = (date) =>
 export const getFetchErrors = () =>
     axios.get(`${API_BASE}/reports/fetch-errors`).then(r => r.data);
 
+export const clearFetchErrors = () =>
+    axios.delete(`${API_BASE}/reports/fetch-errors`).then(r => r.data);
+
 export const exportExcel = (type = 'daily', date) => {
     const params = new URLSearchParams({ type });
     if (date) params.append('date', date);

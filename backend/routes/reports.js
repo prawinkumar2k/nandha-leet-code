@@ -104,8 +104,29 @@ router.get('/export/csv', async (req, res) => {
 router.get('/fetch-errors', async (req, res) => {
     try {
         const db = getDb();
-        const errors = await db.all('SELECT * FROM fetch_errors ORDER BY error_at DESC LIMIT 100');
+        // Deduplicate: return only the latest error per student (reg_no)
+        const errors = await db.all(`
+            SELECT fe.*
+            FROM fetch_errors fe
+            INNER JOIN (
+                SELECT reg_no, MAX(error_at) AS latest_at
+                FROM fetch_errors
+                GROUP BY reg_no
+            ) latest ON fe.reg_no = latest.reg_no AND fe.error_at = latest.latest_at
+            ORDER BY fe.error_at DESC
+            LIMIT 200
+        `);
         res.json({ success: true, data: errors });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+});
+
+router.delete('/fetch-errors', async (req, res) => {
+    try {
+        const db = getDb();
+        await db.run('DELETE FROM fetch_errors');
+        res.json({ success: true, message: 'All fetch errors cleared' });
     } catch (error) {
         res.status(500).json({ success: false, message: error.message });
     }

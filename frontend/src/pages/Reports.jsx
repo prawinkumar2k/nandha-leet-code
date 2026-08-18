@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { BarChart3, Download, FileText, Table, AlertCircle } from 'lucide-react';
-import { getDailyReport, exportExcel, exportCsv, getFetchErrors } from '../services/api';
+import { getDailyReport, exportExcel, exportCsv, getFetchErrors, clearFetchErrors } from '../services/api';
 import { useDate } from '../context/DateContext';
 import toast from 'react-hot-toast';
 
@@ -123,7 +123,19 @@ export default function Reports() {
                 <div>
                     <div className="card-header" style={{ marginBottom: 12 }}>
                         <div className="card-title">Recent Fetch Errors</div>
-                        <span className="badge badge-error">{errors.length}</span>
+                        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                            <span className="badge badge-error">{errors.length}</span>
+                            {errors.length > 0 && (
+                                <button className="btn btn-sm" style={{ background: 'var(--color-error, #ef4444)', color: '#fff', fontSize: 11, padding: '2px 10px', borderRadius: 6 }}
+                                    onClick={() => {
+                                        if (!window.confirm('Clear all fetch errors?')) return;
+                                        clearFetchErrors().then(() => setErrors([]));
+                                    }}
+                                >
+                                    🗑 Clear All
+                                </button>
+                            )}
+                        </div>
                     </div>
                     {errors.length === 0 ? (
                         <div className="alert alert-success">

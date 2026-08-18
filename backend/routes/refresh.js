@@ -195,6 +195,8 @@ router.post('/all', async (req, res) => {
                         at: new Date().toISOString()
                     });
 
+                    // Remove any previous error for this student today before inserting a fresh one
+                    await db.run(`DELETE FROM fetch_errors WHERE reg_no = ? AND DATE(error_at) = DATE('now', 'localtime')`, [student.reg_no]);
                     await db.run(`
             INSERT INTO fetch_errors (reg_no, student_name, profile_url, error_reason)
             VALUES (?, ?, ?, ?)
