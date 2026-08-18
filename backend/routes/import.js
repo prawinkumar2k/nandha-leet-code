@@ -6,6 +6,7 @@ const fs = require('fs');
 const { importExcel } = require('../services/excelService');
 const { getDb } = require('../database/db');
 const { extractUsername } = require('../services/leetcodeService');
+const refreshRouter = require('./refresh');
 const XLSX = require('xlsx');
 
 router.get('/template', (req, res) => {
@@ -181,6 +182,12 @@ router.post('/fix-urls', uploadAny.single('file'), async (req, res) => {
 
                 if (result?.changes > 0) {
                     updated++;
+                    // Instantly trigger a refresh for this student so they populate in the Students list
+                    const studentRow = await db.get('SELECT id FROM students WHERE reg_no = ?', [reg_no]);
+                    if (studentRow) {
+                        await refreshRouter.processStudent(studentRow.id, newUrl, db);
+                    }
+
                     // Clear resolved fetch errors for this student
                     await db.run(`DELETE FROM fetch_errors WHERE reg_no = ?`, [reg_no]);
                 } else {

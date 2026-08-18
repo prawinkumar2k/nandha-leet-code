@@ -124,6 +124,8 @@ async function processStudent(studentId, profileUrl, db) {
     }
 }
 
+router.processStudent = processStudent;
+
 router.get('/status', (req, res) => {
     const elapsed = refreshState.startTime
         ? Math.round((Date.now() - refreshState.startTime) / 1000)
