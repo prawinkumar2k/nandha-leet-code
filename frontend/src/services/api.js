@@ -93,6 +93,15 @@ export const getFetchErrors = () =>
 export const clearFetchErrors = () =>
     axios.delete(`${API_BASE}/reports/fetch-errors`).then(r => r.data);
 
+export const exportErrorsExcel = () => {
+    window.open(`${API_BASE}/reports/export-errors-excel`, '_blank');
+};
+
+export const fixUrlsUpload = (formData) =>
+    axios.post(`${API_BASE}/import/fix-urls`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+    }).then(r => r.data);
+
 export const exportExcel = (type = 'daily', date) => {
     const params = new URLSearchParams({ type });
     if (date) params.append('date', date);

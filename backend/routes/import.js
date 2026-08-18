@@ -120,4 +120,85 @@ router.post('/excel', upload.single('excel'), async (req, res) => {
     }
 });
 
+// Allow CSV uploads too for fix-urls
+const uploadAny = multer({
+    dest: path.join(__dirname, '..', '..', 'data', 'uploads'),
+    limits: { fileSize: 50 * 1024 * 1024 },
+    fileFilter: (req, file, cb) => {
+        const ext = path.extname(file.originalname).toLowerCase();
+        if (['.xlsx', '.xls', '.csv'].includes(ext)) cb(null, true);
+        else cb(new Error('Only Excel or CSV files allowed'));
+    }
+});
+
+// Bulk URL fix: upload the corrected Excel/CSV and update student URLs
+router.post('/fix-urls', uploadAny.single('file'), async (req, res) => {
+    if (!req.file) return res.status(400).json({ success: false, message: 'No file uploaded' });
+
+    try {
+        const XLSX = require('xlsx');
+        const db = getDb();
+
+        const wb = XLSX.readFile(req.file.path);
+        const ws = wb.Sheets[wb.SheetNames[0]];
+        const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
+
+        // Cleanup temp file
+        if (fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
+
+        // Find header row — first row
+        const header = rows[0]?.map(h => String(h).trim().toLowerCase()) || [];
+        const regIdx = header.findIndex(h => h.includes('reg'));
+        const correctIdx = header.findIndex(h => h.includes('correct'));
+
+        if (regIdx === -1 || correctIdx === -1) {
+            return res.status(400).json({ success: false, message: 'Could not find "Reg No" or "Correct URL" columns in the file.' });
+        }
+
+        let updated = 0, skipped = 0;
+        const errors = [];
+
+        await db.run('BEGIN TRANSACTION');
+        try {
+            for (let i = 1; i < rows.length; i++) {
+                const reg_no = String(rows[i][regIdx] || '').trim();
+                const newUrl = String(rows[i][correctIdx] || '').trim();
+
+                if (!reg_no) continue; // blank row
+                if (!newUrl) { skipped++; continue; } // user left Correct URL blank — skip
+
+                const username = extractUsername(newUrl);
+                if (!username) {
+                    errors.push(`Row ${i + 1} (${reg_no}): cannot extract username from "${newUrl}"`);
+                    skipped++;
+                    continue;
+                }
+
+                const result = await db.run(
+                    `UPDATE students SET leetcode_profile_url = ?, leetcode_username = ?, updated_at = CURRENT_TIMESTAMP WHERE reg_no = ?`,
+                    [newUrl, username, reg_no]
+                );
+
+                if (result?.changes > 0) {
+                    updated++;
+                    // Clear resolved fetch errors for this student
+                    await db.run(`DELETE FROM fetch_errors WHERE reg_no = ?`, [reg_no]);
+                } else {
+                    errors.push(`Row ${i + 1}: student with reg_no "${reg_no}" not found`);
+                    skipped++;
+                }
+            }
+            await db.run('COMMIT');
+        } catch (err) {
+            await db.run('ROLLBACK');
+            throw err;
+        }
+
+        res.json({ success: true, updated, skipped, errors });
+    } catch (error) {
+        if (req.file && fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
+        res.status(500).json({ success: false, message: error.message });
+    }
+});
+
 module.exports = router;

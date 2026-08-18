@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { BarChart3, Download, FileText, Table, AlertCircle } from 'lucide-react';
-import { getDailyReport, exportExcel, exportCsv, getFetchErrors, clearFetchErrors } from '../services/api';
+import { getDailyReport, exportExcel, exportCsv, getFetchErrors, clearFetchErrors, exportErrorsExcel, fixUrlsUpload } from '../services/api';
 import { useDate } from '../context/DateContext';
 import toast from 'react-hot-toast';
 
@@ -10,6 +10,8 @@ export default function Reports() {
     const [report, setReport] = useState([]);
     const [errors, setErrors] = useState([]);
     const [loading, setLoading] = useState(false);
+    const [importing, setImporting] = useState(false);
+    const [fixResult, setFixResult] = useState(null);
 
     useEffect(() => {
         if (activeTab === 'daily') {
@@ -123,20 +125,77 @@ export default function Reports() {
                 <div>
                     <div className="card-header" style={{ marginBottom: 12 }}>
                         <div className="card-title">Recent Fetch Errors</div>
-                        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                        <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
                             <span className="badge badge-error">{errors.length}</span>
-                            {errors.length > 0 && (
-                                <button className="btn btn-sm" style={{ background: 'var(--color-error, #ef4444)', color: '#fff', fontSize: 11, padding: '2px 10px', borderRadius: 6 }}
+                            {errors.length > 0 && (<>
+                                {/* Step 1: Export */}
+                                <button className="btn btn-secondary btn-sm"
+                                    title="Download editable Excel — fill Correct URL column"
+                                    onClick={() => { setFixResult(null); exportErrorsExcel(); }}
+                                >
+                                    ⬇ Export Errors Excel
+                                </button>
+                                {/* Step 2: Import fixed sheet */}
+                                <button className="btn btn-sm"
+                                    style={{ background: 'var(--color-brand)', color: '#fff', fontSize: 11, padding: '2px 10px', borderRadius: 6 }}
+                                    disabled={importing}
+                                    onClick={() => document.getElementById('fix-url-input').click()}
+                                >
+                                    {importing ? '⏳ Updating...' : '⬆ Import URL Fix'}
+                                </button>
+                                <input
+                                    id="fix-url-input"
+                                    type="file"
+                                    accept=".xlsx,.xls,.csv"
+                                    style={{ display: 'none' }}
+                                    onChange={async (e) => {
+                                        const file = e.target.files?.[0];
+                                        if (!file) return;
+                                        e.target.value = '';
+                                        setImporting(true);
+                                        setFixResult(null);
+                                        try {
+                                            const fd = new FormData();
+                                            fd.append('file', file);
+                                            const r = await fixUrlsUpload(fd);
+                                            setFixResult(r);
+                                            // Refresh errors list
+                                            getFetchErrors().then(res => setErrors(res.data || []));
+                                        } catch (err) {
+                                            setFixResult({ error: err.response?.data?.message || err.message });
+                                        } finally {
+                                            setImporting(false);
+                                        }
+                                    }}
+                                />
+                                <button className="btn btn-sm"
+                                    style={{ background: 'var(--color-error, #ef4444)', color: '#fff', fontSize: 11, padding: '2px 10px', borderRadius: 6 }}
                                     onClick={() => {
                                         if (!window.confirm('Clear all fetch errors?')) return;
-                                        clearFetchErrors().then(() => setErrors([]));
+                                        clearFetchErrors().then(() => { setErrors([]); setFixResult(null); });
                                     }}
                                 >
                                     🗑 Clear All
                                 </button>
-                            )}
+                            </>)}
                         </div>
                     </div>
+                    {/* Workflow hint */}
+                    {errors.length > 0 && (
+                        <div className="alert" style={{ marginBottom: 10, fontSize: 12, background: 'rgba(59,130,246,0.08)', border: '1px solid rgba(59,130,246,0.2)', borderRadius: 8, padding: '8px 14px', color: 'var(--color-text-secondary)' }}>
+                            💡 <strong>How to fix:</strong> 1) Click <em>Export Errors Excel</em> → open file → fill <strong>"Correct URL (Fill This)"</strong> column with the right LeetCode URL for each student → 2) Click <em>Import URL Fix</em> to upload and bulk-update.
+                        </div>
+                    )}
+                    {/* Fix result banner */}
+                    {fixResult && (
+                        fixResult.error
+                            ? <div className="alert alert-error" style={{ marginBottom: 10 }}>❌ {fixResult.error}</div>
+                            : <div className="alert alert-success" style={{ marginBottom: 10 }}>
+                                ✅ Updated <strong>{fixResult.updated}</strong> student URL(s).
+                                {fixResult.skipped > 0 && ` ${fixResult.skipped} skipped (blank or not found).`}
+                                {fixResult.errors?.length > 0 && <div style={{ marginTop: 4, fontSize: 11, color: 'var(--color-hard)' }}>{fixResult.errors.join(' | ')}</div>}
+                            </div>
+                    )}
                     {errors.length === 0 ? (
                         <div className="alert alert-success">
                             ✅ No fetch errors recorded. All student data is being fetched correctly.

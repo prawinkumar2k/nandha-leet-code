@@ -132,4 +132,48 @@ router.delete('/fetch-errors', async (req, res) => {
     }
 });
 
+
+// Export fetch errors as an editable Excel — user fills "Correct URL" column and re-uploads
+router.get('/export-errors-excel', async (req, res) => {
+    try {
+        const db = getDb();
+        const XLSX = require('xlsx');
+
+        // Latest error per student
+        const errors = await db.all(`
+            SELECT fe.*
+            FROM fetch_errors fe
+            INNER JOIN (
+                SELECT reg_no, MAX(error_at) AS latest_at
+                FROM fetch_errors GROUP BY reg_no
+            ) latest ON fe.reg_no = latest.reg_no AND fe.error_at = latest.latest_at
+            ORDER BY fe.error_at DESC
+        `);
+
+        const header = ['Reg No', 'Name', 'Current URL (Broken)', 'Correct URL (Fill This)', 'Error Reason'];
+        const rows = errors.map(e => [
+            e.reg_no,
+            e.student_name,
+            e.profile_url || '',
+            '', // user fills this
+            e.error_reason || ''
+        ]);
+
+        const wb = XLSX.utils.book_new();
+        const ws = XLSX.utils.aoa_to_sheet([header, ...rows]);
+
+        // Column widths
+        ws['!cols'] = [{ wch: 18 }, { wch: 22 }, { wch: 40 }, { wch: 40 }, { wch: 50 }];
+
+        XLSX.utils.book_append_sheet(wb, ws, 'Fetch Errors');
+        const buffer = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' });
+
+        res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        res.setHeader('Content-Disposition', 'attachment; filename="LEO_URL_Fix.xlsx"');
+        res.send(buffer);
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+});
+
 module.exports = router;
