@@ -278,7 +278,7 @@ async function fetchStudentData(profileUrl) {
     const d = response.data?.data;
     if (!d) throw new Error(`No data returned for user "${username}"`);
 
-    const user = d.matchedUser;
+    const user = d.matchedUser || {};
     if (!user) throw new Error(`User "${username}" not found on LeetCode`);
 
     // Parse solved stats and submission stats

@@ -106,11 +106,17 @@ async function initDb() {
 
         try {
             db.run(`ALTER TABLE students ADD COLUMN language_stats TEXT;`);
-            db.run(`ALTER TABLE students ADD COLUMN recent_submissions TEXT;`);
-            console.log('Migration: Added language_stats and recent_submissions to students');
+            console.log('Migration: Added language_stats to students');
             isDirty = true;
-            saveDb();
         } catch (e) { }
+
+        try {
+            db.run(`ALTER TABLE students ADD COLUMN recent_submissions TEXT;`);
+            console.log('Migration: Added recent_submissions to students');
+            isDirty = true;
+        } catch (e) { }
+
+        if (isDirty) saveDb();
     } else {
         db = new sqlJs.Database();
 

@@ -162,6 +162,7 @@ async function processStudent(studentId, profileUrl, db) {
 
         return { success: true };
     } catch (error) {
+        console.error("DEBUG Refresh Error:", error);
         return { success: false, error: error.message };
     }
 }
