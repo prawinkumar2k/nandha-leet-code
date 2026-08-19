@@ -3,6 +3,7 @@ data/
 *.zip
 *.db
 .env
-release/win-unpacked/
+release/
+frontend/dist/
 .idea/
 .vscode/
