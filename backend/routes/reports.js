@@ -6,8 +6,8 @@ const { exportToCsv } = require('../services/excelService');
 
 router.get('/dashboard', async (req, res) => {
     try {
-        const { date } = req.query;
-        const summary = await getDashboardSummary(date);
+        const { date, batch } = req.query;
+        const summary = await getDashboardSummary(date, batch);
         res.json({ success: true, data: summary });
     } catch (error) {
         res.status(500).json({ success: false, message: error.message });
@@ -16,7 +16,8 @@ router.get('/dashboard', async (req, res) => {
 
 router.get('/departments', async (req, res) => {
     try {
-        const stats = await getDepartmentStats();
+        const { batch } = req.query;
+        const stats = await getDepartmentStats(batch);
         res.json({ success: true, data: stats });
     } catch (error) {
         res.status(500).json({ success: false, message: error.message });
@@ -25,8 +26,8 @@ router.get('/departments', async (req, res) => {
 
 router.get('/top-students', async (req, res) => {
     try {
-        const { limit = 10 } = req.query;
-        const students = await getTopStudents(parseInt(limit));
+        const { limit = 10, batch } = req.query;
+        const students = await getTopStudents(parseInt(limit), batch);
         res.json({ success: true, data: students });
     } catch (error) {
         res.status(500).json({ success: false, message: error.message });
@@ -48,8 +49,10 @@ router.get('/low-activity', async (req, res) => {
         if (isNaN(threshold) || req.query.threshold === '0') {
             threshold = dbThreshold || 0; // Use DB setting if query is 0 or missing
         }
+        
+        const { batch } = req.query;
 
-        const students = await getLowActivityStudents(threshold);
+        const students = await getLowActivityStudents(threshold, batch);
         res.json({ success: true, data: students });
     } catch (error) {
         res.status(500).json({ success: false, message: error.message });
@@ -58,8 +61,8 @@ router.get('/low-activity', async (req, res) => {
 
 router.get('/chart-data', async (req, res) => {
     try {
-        const { days = 7 } = req.query;
-        const data = await getDailyChartData(parseInt(days));
+        const { days = 7, batch } = req.query;
+        const data = await getDailyChartData(parseInt(days), batch);
         res.json({ success: true, data });
     } catch (error) {
         res.status(500).json({ success: false, message: error.message });
@@ -68,8 +71,8 @@ router.get('/chart-data', async (req, res) => {
 
 router.get('/daily-report', async (req, res) => {
     try {
-        const { date } = req.query;
-        const data = await getDailyReport(date);
+        const { date, batch } = req.query;
+        const data = await getDailyReport(date, batch);
         res.json({ success: true, data });
     } catch (error) {
         res.status(500).json({ success: false, message: error.message });
@@ -79,8 +82,14 @@ router.get('/daily-report', async (req, res) => {
 router.get('/available-dates', async (req, res) => {
     try {
         const db = getDb();
-        const result = await db.all('SELECT DISTINCT date FROM daily_stats ORDER BY date DESC LIMIT 90');
-        res.json({ success: true, dates: result.map(r => r.date) });
+        const dateResult = await db.all('SELECT DISTINCT date FROM daily_stats ORDER BY date DESC LIMIT 90');
+        const batchResult = await db.all('SELECT DISTINCT batch FROM students WHERE batch IS NOT NULL AND batch != "" ORDER BY batch DESC');
+        
+        res.json({ 
+            success: true, 
+            dates: dateResult.map(r => r.date),
+            batches: batchResult.map(r => r.batch)
+        });
     } catch (error) {
         res.status(500).json({ success: false, message: error.message });
     }
@@ -88,8 +97,8 @@ router.get('/available-dates', async (req, res) => {
 
 router.get('/export/excel', async (req, res) => {
     try {
-        const { type = 'daily', date } = req.query;
-        const { buffer, filename } = await generateExcelReport(type, date);
+        const { type = 'daily', date, batch } = req.query;
+        const { buffer, filename } = await generateExcelReport(type, date, batch);
 
         res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
         res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);

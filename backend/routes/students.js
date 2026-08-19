@@ -5,7 +5,7 @@ const { getDb } = require('../database/db');
 router.get('/', async (req, res) => {
     try {
         const db = getDb();
-        const { search, department, sortBy = 'total_solved', sortDir = 'DESC', date } = req.query;
+        const { search, department, batch, sortBy = 'total_solved', sortDir = 'DESC', date } = req.query;
 
         let query = `
       SELECT 
@@ -71,6 +71,11 @@ router.get('/', async (req, res) => {
         if (filterDept && filterDept !== 'all') {
             conditions.push(`s.department = ?`);
             params.push(filterDept);
+        }
+
+        if (batch && batch !== 'all') {
+            conditions.push(`s.batch = ?`);
+            params.push(batch);
         }
 
         if (conditions.length > 0) {

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { BarChart2, Building2, Users, TrendingUp, Star, Download } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { getDepartmentStats } from '../services/api';
+import { useDate } from '../context/DateContext';
 
 const DEPT_COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ef4444', '#06b6d4', '#ec4899', '#14b8a6'];
 
@@ -33,15 +34,16 @@ function downloadDeptReport(department = null) {
 }
 
 export default function DepartmentsPage() {
+    const { selectedBatch } = useDate();
     const [deptStats, setDeptStats] = useState([]);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        getDepartmentStats().then(r => {
+        getDepartmentStats(selectedBatch).then(r => {
             setDeptStats(r.data || []);
             setLoading(false);
         }).catch(() => setLoading(false));
-    }, []);
+    }, [selectedBatch]);
 
     const chartData = deptStats.map((d, i) => ({
         name: d.department || 'Unknown',

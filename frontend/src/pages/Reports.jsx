@@ -5,7 +5,7 @@ import { useDate } from '../context/DateContext';
 import toast from 'react-hot-toast';
 
 export default function Reports() {
-    const { selectedDate } = useDate();
+    const { selectedDate, selectedBatch } = useDate();
     const [activeTab, setActiveTab] = useState('daily');
     const [report, setReport] = useState([]);
     const [errors, setErrors] = useState([]);
@@ -16,14 +16,14 @@ export default function Reports() {
     useEffect(() => {
         if (activeTab === 'daily') {
             setLoading(true);
-            getDailyReport(selectedDate || undefined).then(r => {
+            getDailyReport(selectedDate || undefined, selectedBatch || undefined).then(r => {
                 setReport(r.data || []);
                 setLoading(false);
             }).catch(() => setLoading(false));
         } else if (activeTab === 'errors') {
             getFetchErrors().then(r => setErrors(r.data || []));
         }
-    }, [activeTab, selectedDate]);
+    }, [activeTab, selectedDate, selectedBatch]);
 
     return (
         <div>
@@ -33,10 +33,10 @@ export default function Reports() {
                     <p className="page-desc">Daily performance and export reports {selectedDate && `(as of ${selectedDate})`}</p>
                 </div>
                 <div style={{ display: 'flex', gap: 10 }}>
-                    <button className="btn btn-secondary btn-sm" onClick={() => exportExcel('daily', selectedDate || undefined)}>
+                    <button className="btn btn-secondary btn-sm" onClick={() => exportExcel('daily', selectedDate || undefined, selectedBatch || undefined)}>
                         <Download size={13} /> Export Excel
                     </button>
-                    <button className="btn btn-secondary btn-sm" onClick={() => exportCsv(selectedDate || undefined)}>
+                    <button className="btn btn-secondary btn-sm" onClick={() => exportCsv(selectedDate || undefined, selectedBatch || undefined)}>
                         <Download size={13} /> Export CSV
                     </button>
                 </div>

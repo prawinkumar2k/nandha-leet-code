@@ -1,14 +1,16 @@
 import { useState, useEffect } from 'react';
 import { getDepartmentStats } from '../services/api';
+import { useDate } from '../context/DateContext';
 import { Trophy, Medal, Building2, Flame } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 export default function Leaderboards() {
+    const { selectedBatch } = useDate();
     const [departments, setDepartments] = useState([]);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        getDepartmentStats().then(res => {
+        getDepartmentStats(selectedBatch).then(res => {
             if (res.success && res.data) {
                 // Sort departments by average total solved descending
                 const sorted = [...res.data]
@@ -18,7 +20,7 @@ export default function Leaderboards() {
             }
         }).catch(() => toast.error("Failed to load department standings"))
             .finally(() => setLoading(false));
-    }, []);
+    }, [selectedBatch]);
 
     const getPodiumColor = (index) => {
         if (index === 0) return { bg: 'linear-gradient(135deg, rgba(234, 179, 8, 0.2), rgba(234, 179, 8, 0.05))', border: '#eab308', text: '#fde047' };

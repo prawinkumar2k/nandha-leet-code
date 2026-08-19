@@ -2,13 +2,16 @@ const { getDb } = require('../database/db');
 const { exportToExcel, exportToCsv } = require('../services/excelService');
 
 // Get dashboard summary
-async function getDashboardSummary(date) {
+async function getDashboardSummary(date, batch) {
   const db = getDb();
 
   const targetDate = date || new Date().toISOString().split('T')[0];
 
   const settingsRows = await db.all('SELECT value FROM app_settings WHERE key = ?', ['target_problems']);
   const targetProblems = settingsRows.length > 0 ? parseInt(settingsRows[0].value, 10) : 200;
+
+  const queryParams = [targetProblems, targetDate];
+  if (batch) queryParams.push(batch);
 
   const stats = await db.get(`
     SELECT 
@@ -30,7 +33,8 @@ async function getDashboardSummary(date) {
     FROM students s
     LEFT JOIN daily_stats ds ON s.id = ds.student_id AND ds.date = ?
     WHERE COALESCE(s.is_banned, 0) = 0
-  `, [targetProblems, targetDate]);
+    ${batch ? 'AND s.batch = ?' : ''}
+  `, queryParams);
 
   return {
     ...stats,
@@ -55,8 +59,11 @@ async function getDashboardSummary(date) {
 }
 
 // Get latest stats for all students
-async function getLatestStatsForStudents() {
+async function getLatestStatsForStudents(batch) {
   const db = getDb();
+
+  const queryParams = [];
+  if (batch) queryParams.push(batch);
 
   return await db.all(`
     SELECT 
@@ -90,13 +97,17 @@ async function getLatestStatsForStudents() {
         SELECT MAX(date) FROM daily_stats WHERE student_id = s.id
       )
     WHERE COALESCE(s.is_banned, 0) = 0
+    ${batch ? 'AND s.batch = ?' : ''}
     ORDER BY ds.total_solved DESC, s.name ASC
-  `);
+  `, queryParams);
 }
 
 // Get department-wise stats
-async function getDepartmentStats() {
+async function getDepartmentStats(batch) {
   const db = getDb();
+
+  const queryParams = [];
+  if (batch) queryParams.push(batch);
 
   return await db.all(`
     SELECT 
@@ -112,15 +123,19 @@ async function getDepartmentStats() {
         SELECT MAX(date) FROM daily_stats WHERE student_id = s.id
       )
     WHERE COALESCE(s.is_banned, 0) = 0
+    ${batch ? 'AND s.batch = ?' : ''}
     GROUP BY s.department
     ORDER BY avg_solved DESC
-  `);
+  `, queryParams);
 }
 
 // Get daily report for a specific date
-async function getDailyReport(date) {
+async function getDailyReport(date, batch) {
   const db = getDb();
   const targetDate = date || new Date().toISOString().split('T')[0];
+
+  const queryParams = [targetDate];
+  if (batch) queryParams.push(batch);
 
   return await db.all(`
     SELECT 
@@ -149,13 +164,18 @@ async function getDailyReport(date) {
     FROM students s
     LEFT JOIN daily_stats ds ON s.id = ds.student_id AND ds.date = ?
     WHERE COALESCE(s.is_banned, 0) = 0
+    ${batch ? 'AND s.batch = ?' : ''}
     ORDER BY rank
-  `, [targetDate]);
+  `, queryParams);
 }
 
 // Get top students
-async function getTopStudents(limit = 10) {
+async function getTopStudents(limit = 10, batch) {
   const db = getDb();
+
+  const queryParams = [];
+  if (batch) queryParams.push(batch);
+  queryParams.push(limit);
 
   return await db.all(`
     SELECT 
@@ -170,14 +190,18 @@ async function getTopStudents(limit = 10) {
     LEFT JOIN daily_stats ds ON s.id = ds.student_id 
       AND ds.date = (SELECT MAX(date) FROM daily_stats WHERE student_id = s.id)
     WHERE COALESCE(s.is_banned, 0) = 0
+    ${batch ? 'AND s.batch = ?' : ''}
     ORDER BY total_solved DESC, today_solved DESC
     LIMIT ?
-  `, [limit]);
+  `, queryParams);
 }
 
 // Get low activity students
-async function getLowActivityStudents(threshold = 0) {
+async function getLowActivityStudents(threshold = 0, batch) {
   const db = getDb();
+
+  const queryParams = [threshold];
+  if (batch) queryParams.push(batch);
 
   return await db.all(`
     SELECT 
@@ -193,13 +217,17 @@ async function getLowActivityStudents(threshold = 0) {
     LEFT JOIN daily_stats ds ON s.id = ds.student_id 
       AND ds.date = (SELECT MAX(date) FROM daily_stats WHERE student_id = s.id)
     WHERE COALESCE(ds.today_solved, 0) <= ? AND COALESCE(s.is_banned, 0) = 0
+    ${batch ? 'AND s.batch = ?' : ''}
     ORDER BY total_solved ASC
-  `, [threshold]);
+  `, queryParams);
 }
 
 // Daily chart data
-async function getDailyChartData(days = 7) {
+async function getDailyChartData(days = 7, batch) {
   const db = getDb();
+
+  const queryParams = [days];
+  if (batch) queryParams.push(batch);
 
   return await db.all(`
     SELECT 
@@ -213,23 +241,24 @@ async function getDailyChartData(days = 7) {
     FROM daily_stats ds
     JOIN students s ON s.id = ds.student_id
     WHERE ds.date >= date('now', '-' || ? || ' days') AND COALESCE(s.is_banned, 0) = 0
+    ${batch ? 'AND s.batch = ?' : ''}
     GROUP BY ds.date
     ORDER BY ds.date ASC
-  `, [days]);
+  `, queryParams);
 }
 
 // Export report data
-async function generateExcelReport(type, date) {
+async function generateExcelReport(type, date, batch) {
   const db = getDb();
   let data;
   let filename;
 
   if (type === 'daily') {
-    data = await getDailyReport(date);
-    filename = `LeetCode_Daily_Report_${date || new Date().toISOString().split('T')[0]}.xlsx`;
+    data = await getDailyReport(date, batch);
+    filename = `LeetCode_Daily_Report_${batch || 'All'}_${date || new Date().toISOString().split('T')[0]}.xlsx`;
   } else if (type === 'department') {
-    data = await getDepartmentStats();
-    filename = `LeetCode_Department_Report_${new Date().toISOString().split('T')[0]}.xlsx`;
+    data = await getDepartmentStats(batch);
+    filename = `LeetCode_Department_Report_${batch || 'All'}_${new Date().toISOString().split('T')[0]}.xlsx`;
   } else if (type === 'contest_weekly' || type === 'contest_biweekly') {
     const isWeekly = type === 'contest_weekly';
     const contestRow = await db.get(`
@@ -246,6 +275,10 @@ async function generateExcelReport(type, date) {
       if (isWeekly && contestRow.contest_name.includes('Biweekly')) {
         // This is a catch-all safety if the SQL above matched poorly, but it handles it.
       }
+      
+      const queryParams = [contestRow.contest_name];
+      if (batch) queryParams.push(batch);
+
       data = await db.all(`
             SELECT 
                 s.reg_no,
@@ -262,16 +295,17 @@ async function generateExcelReport(type, date) {
             FROM students s
             LEFT JOIN contest_stats cs ON s.id = cs.student_id AND cs.contest_name = ?
             WHERE COALESCE(s.is_banned, 0) = 0
+            ${batch ? 'AND s.batch = ?' : ''}
             ORDER BY CASE WHEN cs.problems_solved IS NULL THEN 1 ELSE 0 END, cs.problems_solved DESC
-        `, [contestRow.contest_name]);
-      filename = `LeetCode_${contestRow.contest_name.replace(/\s+/g, '_')}_Report.xlsx`;
+        `, queryParams);
+      filename = `LeetCode_${contestRow.contest_name.replace(/\s+/g, '_')}_${batch || 'All'}_Report.xlsx`;
     } else {
       data = [];
       filename = `LeetCode_Contest_Report.xlsx`;
     }
   } else {
-    data = await getLatestStatsForStudents();
-    filename = `LeetCode_Full_Report_${new Date().toISOString().split('T')[0]}.xlsx`;
+    data = await getLatestStatsForStudents(batch);
+    filename = `LeetCode_Full_Report_${batch || 'All'}_${new Date().toISOString().split('T')[0]}.xlsx`;
   }
 
   const buffer = exportToExcel(data, filename);

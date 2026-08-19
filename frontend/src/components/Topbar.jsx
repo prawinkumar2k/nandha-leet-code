@@ -5,7 +5,7 @@ import { useDate } from '../context/DateContext';
 import toast from 'react-hot-toast';
 
 export default function Topbar({ lastRefresh, onRefreshComplete }) {
-    const { selectedDate, setSelectedDate, availableDates } = useDate();
+    const { selectedDate, setSelectedDate, availableDates, selectedBatch, setSelectedBatch, availableBatches } = useDate();
     const [isRefreshing, setIsRefreshing] = useState(false);
     const [refreshInfo, setRefreshInfo] = useState(null);
     const [online, setOnline] = useState(navigator.onLine);
@@ -104,6 +104,23 @@ export default function Topbar({ lastRefresh, onRefreshComplete }) {
                         >
                             {availableDates.map(d => (
                                 <option key={d} value={d} style={{ color: '#0f172a' }}>{d} {d === availableDates[0] ? '(Latest)' : ''}</option>
+                            ))}
+                        </select>
+                    </div>
+                )}
+
+                {/* Batch Picker */}
+                {availableBatches && availableBatches.length > 0 && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <select 
+                            className="form-select form-select-sm" 
+                            style={{ background: 'rgba(255,255,255,0.1)', color: '#fff', border: '1px solid rgba(255,255,255,0.2)', fontSize: 12, padding: '4px 24px 4px 8px' }}
+                            value={selectedBatch || ''} 
+                            onChange={e => setSelectedBatch(e.target.value)}
+                        >
+                            <option value="" style={{ color: '#0f172a' }}>All Batches</option>
+                            {availableBatches.map(b => (
+                                <option key={b} value={b} style={{ color: '#0f172a' }}>Batch {b}</option>
                             ))}
                         </select>
                     </div>

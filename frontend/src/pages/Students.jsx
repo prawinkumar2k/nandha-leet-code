@@ -18,7 +18,7 @@ function SortIcon({ field, sortBy, sortDir }) {
 
 export default function Students() {
     const navigate = useNavigate();
-    const { selectedDate } = useDate();
+    const { selectedDate, selectedBatch } = useDate();
     const [students, setStudents] = useState([]);
     const [departments, setDepartments] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -39,6 +39,7 @@ export default function Students() {
             const result = await getStudents({
                 search: search || undefined,
                 department: department || undefined,
+                batch: selectedBatch || undefined,
                 sortBy, sortDir,
                 date: selectedDate || undefined,
                 banned: showBanned
@@ -49,7 +50,7 @@ export default function Students() {
         } finally {
             setLoading(false);
         }
-    }, [search, department, sortBy, sortDir, selectedDate, showBanned]);
+    }, [search, department, sortBy, sortDir, selectedDate, selectedBatch, showBanned]);
 
     useEffect(() => {
         import('../services/api').then(({ getDepartments }) => {

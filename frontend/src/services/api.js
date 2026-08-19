@@ -66,26 +66,26 @@ export const verifyStudent = (id) =>
     axios.get(`${API_BASE}/refresh/verify/${id}`).then(r => r.data);
 
 // ---- Reports ----
-export const getDashboardSummary = (date) =>
-    axios.get(`${API_BASE}/reports/dashboard`, { params: { date } }).then(r => r.data);
+export const getDashboardSummary = (date, batch) =>
+    axios.get(`${API_BASE}/reports/dashboard`, { params: { date, batch } }).then(r => r.data);
 
-export const getDepartmentStats = () =>
-    axios.get(`${API_BASE}/reports/departments`).then(r => r.data);
+export const getDepartmentStats = (batch) =>
+    axios.get(`${API_BASE}/reports/departments`, { params: { batch } }).then(r => r.data);
 
-export const getTopStudents = (limit = 10) =>
-    axios.get(`${API_BASE}/reports/top-students`, { params: { limit } }).then(r => r.data);
+export const getTopStudents = (limit = 10, batch) =>
+    axios.get(`${API_BASE}/reports/top-students`, { params: { limit, batch } }).then(r => r.data);
 
-export const getLowActivityStudents = (threshold = 0) =>
-    axios.get(`${API_BASE}/reports/low-activity`, { params: { threshold } }).then(r => r.data);
+export const getLowActivityStudents = (threshold = 0, batch) =>
+    axios.get(`${API_BASE}/reports/low-activity`, { params: { threshold, batch } }).then(r => r.data);
 
-export const getChartData = (days = 14) =>
-    axios.get(`${API_BASE}/reports/chart-data`, { params: { days } }).then(r => r.data);
+export const getChartData = (days = 14, batch) =>
+    axios.get(`${API_BASE}/reports/chart-data`, { params: { days, batch } }).then(r => r.data);
 
 export const getAvailableDates = () =>
     axios.get(`${API_BASE}/reports/available-dates`).then(r => r.data);
 
-export const getDailyReport = (date) =>
-    axios.get(`${API_BASE}/reports/daily-report`, { params: { date } }).then(r => r.data);
+export const getDailyReport = (date, batch) =>
+    axios.get(`${API_BASE}/reports/daily-report`, { params: { date, batch } }).then(r => r.data);
 
 export const getFetchErrors = () =>
     axios.get(`${API_BASE}/reports/fetch-errors`).then(r => r.data);
@@ -117,15 +117,17 @@ export const getContestIntervalLists = () =>
 export const getContestIntervalReport = (contestName) =>
     axios.get(`${API_BASE}/reports/contest-intervals/report?contestName=${encodeURIComponent(contestName)}`).then(r => r.data);
 
-export const exportExcel = (type = 'daily', date) => {
+export const exportExcel = (type = 'daily', date, batch) => {
     const params = new URLSearchParams({ type });
     if (date) params.append('date', date);
+    if (batch) params.append('batch', batch);
     window.open(`${API_BASE}/reports/export/excel?${params.toString()}`, '_blank');
 };
 
-export const exportCsv = (date) => {
+export const exportCsv = (date, batch) => {
     const params = new URLSearchParams();
     if (date) params.append('date', date);
+    if (batch) params.append('batch', batch);
     window.open(`${API_BASE}/reports/export/csv?${params.toString()}`, '_blank');
 };
 

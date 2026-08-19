@@ -54,7 +54,7 @@ function CustomTooltip({ active, payload, label }) {
 }
 
 export default function Dashboard() {
-    const { selectedDate } = useDate();
+    const { selectedDate, selectedBatch } = useDate();
     const [summary, setSummary] = useState(null);
     const [deptStats, setDeptStats] = useState([]);
     const [topStudents, setTopStudents] = useState([]);
@@ -63,15 +63,15 @@ export default function Dashboard() {
     const [fetchErrors, setFetchErrors] = useState([]);
     const [loading, setLoading] = useState(true);
 
-    const loadData = useCallback(async (date) => {
+    const loadData = useCallback(async (date, batch) => {
         setLoading(true);
         try {
             const [sum, dept, top, low, chart, errs] = await Promise.allSettled([
-                getDashboardSummary(date || undefined),
-                getDepartmentStats(),
-                getTopStudents(10),
-                getLowActivityStudents(0),
-                getChartData(14),
+                getDashboardSummary(date || undefined, batch),
+                getDepartmentStats(batch),
+                getTopStudents(10, batch),
+                getLowActivityStudents(0, batch),
+                getChartData(14, batch),
                 getFetchErrors()
             ]);
 
@@ -88,7 +88,7 @@ export default function Dashboard() {
         }
     }, []);
 
-    useEffect(() => { loadData(selectedDate); }, [loadData, selectedDate]);
+    useEffect(() => { loadData(selectedDate, selectedBatch); }, [loadData, selectedDate, selectedBatch]);
 
     const diffData = summary ? [
         { name: 'Easy', value: summary.total_easy || 0, color: COLORS.easy },
