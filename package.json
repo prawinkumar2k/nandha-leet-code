@@ -54,6 +54,7 @@
             "package.json"
         ],
         "win": {
+            "icon": "icon.ico",
             "target": [
                 {
                     "target": "portable",
