@@ -68,6 +68,7 @@ export default function Reports() {
                                     <th>Rank</th>
                                     <th>Register No</th>
                                     <th>Name</th>
+                                    <th>Batch</th>
                                     <th>Department</th>
                                     <th>Total</th>
                                     <th>Easy</th>
@@ -102,6 +103,7 @@ export default function Reports() {
                                             <td className={`td-rank${i < 3 ? ' top-3' : ''}`}>{i < 3 ? ['🥇', '🥈', '🥉'][i] : s.rank}</td>
                                             <td className="td-reg">{s.reg_no}</td>
                                             <td className="td-name">{s.name}</td>
+                                            <td style={{ fontSize: 11, fontWeight: 600 }}>{s.batch || '—'}</td>
                                             <td><span className="td-dept">{s.department || '—'}</span></td>
                                             <td style={{ fontFamily: 'var(--font-mono)', fontWeight: 700 }}>{s.total_solved?.toLocaleString() || 0}</td>
                                             <td className="td-easy">{s.easy_solved || 0}</td>
@@ -209,6 +211,8 @@ export default function Reports() {
                                     <tr>
                                         <th>Register No</th>
                                         <th>Name</th>
+                                        <th>Batch</th>
+                                        <th>Dept</th>
                                         <th>Profile URL</th>
                                         <th>Error</th>
                                         <th>At</th>
@@ -219,6 +223,8 @@ export default function Reports() {
                                         <tr key={e.id}>
                                             <td className="td-reg">{e.reg_no}</td>
                                             <td className="td-name">{e.student_name}</td>
+                                            <td style={{ fontSize: 11, fontWeight: 600 }}>{e.batch || '-'}</td>
+                                            <td style={{ fontSize: 11, color: 'var(--color-text-secondary)' }}>{e.department || '-'}</td>
                                             <td style={{ fontSize: 11, color: 'var(--color-text-muted)', maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis' }}>
                                                 {e.profile_url}
                                             </td>

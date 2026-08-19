@@ -61,7 +61,9 @@ export default function App() {
         return (
             <div className="loading-screen">
                 <div className="loading-content">
-                    <div className="loading-logo">🏆</div>
+                    <div className="loading-logo">
+                        <img src="/logo.png" alt="LEO" style={{ width: '64px', height: '64px', objectFit: 'contain', filter: 'drop-shadow(0 4px 10px rgba(0,0,0,0.5))' }} />
+                    </div>
                     <div className="loading-title">LeetCode Student Tracking</div>
                     <div className="loading-sub">Starting backend services...</div>
                     <div className="spinner spinner-lg" style={{ margin: '20px auto' }}></div>
@@ -74,7 +76,9 @@ export default function App() {
         return (
             <div className="loading-screen">
                 <div className="loading-content">
-                    <div className="loading-logo">⚠️</div>
+                    <div className="loading-logo">
+                        <img src="/logo.png" alt="LEO" style={{ width: '64px', height: '64px', objectFit: 'contain', filter: 'drop-shadow(0 4px 10px rgba(0,0,0,0.5))' }} />
+                    </div>
                     <div className="loading-title" style={{ color: 'var(--color-hard)' }}>Backend Unavailable</div>
                     <div className="loading-sub">Could not connect to backend. Please restart the app.</div>
                     <button className="btn btn-primary" style={{ marginTop: 20 }} onClick={() => window.location.reload()}>

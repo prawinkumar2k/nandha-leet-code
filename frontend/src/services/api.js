@@ -72,6 +72,9 @@ export const getDashboardSummary = (date, batch) =>
 export const getDepartmentStats = (batch) =>
     axios.get(`${API_BASE}/reports/departments`, { params: { batch } }).then(r => r.data);
 
+export const getBatchStats = () =>
+    axios.get(`${API_BASE}/reports/batches`).then(r => r.data);
+
 export const getTopStudents = (limit = 10, batch) =>
     axios.get(`${API_BASE}/reports/top-students`, { params: { limit, batch } }).then(r => r.data);
 
@@ -114,8 +117,8 @@ export const clearAuditLogs = () =>
 export const getContestIntervalLists = () =>
     axios.get(`${API_BASE}/reports/contest-intervals/list`).then(r => r.data);
 
-export const getContestIntervalReport = (contestName) =>
-    axios.get(`${API_BASE}/reports/contest-intervals/report?contestName=${encodeURIComponent(contestName)}`).then(r => r.data);
+export const getContestIntervalReport = (contest_name, batch) =>
+    axios.get(`${API_BASE}/reports/contest-intervals/report`, { params: { contest_name, batch } }).then(r => r.data);
 
 export const exportExcel = (type = 'daily', date, batch) => {
     const params = new URLSearchParams({ type });
@@ -135,8 +138,8 @@ export const exportCsv = (date, batch) => {
 export const getContests = (student_id) =>
     axios.get(`${API_BASE}/contests`, { params: { student_id } }).then(r => r.data);
 
-export const getLatestContest = (date) =>
-    axios.get(`${API_BASE}/contests/latest`, { params: { date } }).then(r => r.data);
+export const getLatestContest = (date, batch) =>
+    axios.get(`${API_BASE}/contests/latest`, { params: { date, batch } }).then(r => r.data);
 
 export const getUpcomingContests = () =>
     axios.get(`${API_BASE}/contests/upcoming`).then(r => r.data);
@@ -157,3 +160,4 @@ export const getBackups = () =>
 
 export const getHistoricStats = (id) =>
     axios.get(`${API_BASE}/students/historic-stats/${id}`).then(r => r.data);
+

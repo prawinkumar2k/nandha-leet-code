@@ -22,7 +22,7 @@ export default function Sidebar() {
     return (
         <div className="sidebar">
             <div className="sidebar-logo">
-                <div className="sidebar-logo-icon">🏆</div>
+                <img src="/logo.png" alt="LEO" style={{ width: '36px', height: '36px', objectFit: 'contain', filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.5))' }} />
                 <h1>LEO</h1>
                 <p>Student Tracker</p>
             </div>

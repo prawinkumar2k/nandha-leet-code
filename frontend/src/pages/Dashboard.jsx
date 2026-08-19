@@ -8,7 +8,7 @@ import {
     XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer
 } from 'recharts';
 import {
-    getDashboardSummary, getDepartmentStats, getTopStudents,
+    getDashboardSummary, getDepartmentStats, getBatchStats, getTopStudents,
     getLowActivityStudents, getChartData, getFetchErrors
 } from '../services/api';
 import { useDate } from '../context/DateContext';
@@ -61,18 +61,20 @@ export default function Dashboard() {
     const [lowActivity, setLowActivity] = useState([]);
     const [chartData, setChartData] = useState([]);
     const [fetchErrors, setFetchErrors] = useState([]);
+    const [batchStats, setBatchStats] = useState([]);
     const [loading, setLoading] = useState(true);
 
     const loadData = useCallback(async (date, batch) => {
         setLoading(true);
         try {
-            const [sum, dept, top, low, chart, errs] = await Promise.allSettled([
+            const [sum, dept, top, low, chart, errs, batchesRes] = await Promise.allSettled([
                 getDashboardSummary(date || undefined, batch),
                 getDepartmentStats(batch),
                 getTopStudents(10, batch),
                 getLowActivityStudents(0, batch),
                 getChartData(14, batch),
-                getFetchErrors()
+                getFetchErrors(),
+                getBatchStats()
             ]);
 
             if (sum.status === 'fulfilled') setSummary(sum.value.data);
@@ -81,6 +83,7 @@ export default function Dashboard() {
             if (low.status === 'fulfilled') setLowActivity(low.value.data || []);
             if (chart.status === 'fulfilled') setChartData(chart.value.data || []);
             if (errs.status === 'fulfilled') setFetchErrors(errs.value.data || []);
+            if (batchesRes.status === 'fulfilled') setBatchStats(batchesRes.value.data || []);
         } catch (e) {
             console.error('Dashboard load error:', e);
         } finally {
@@ -100,6 +103,12 @@ export default function Dashboard() {
         name: d.department || 'Unknown',
         avg: Math.round(d.avg_solved || 0),
         total: d.total_solved || 0
+    }));
+
+    const batchChartData = batchStats.slice(0, 8).map(d => ({
+        name: d.batch || 'Unknown',
+        avg: Math.round(d.avg_solved || 0),
+        total: d.total_students || 0
     }));
 
     return (
@@ -152,6 +161,27 @@ export default function Dashboard() {
                         <StatCard icon={Trophy} label="Contest Solved" value={summary?.contest_solved} color="brand" sub={`${summary?.students_active_contest || 0} students`} />
                     </div>
 
+                    {/* Batch Population Cards (Moved to top) */}
+                    {batchStats && batchStats.length > 0 && !selectedBatch && (
+                        <div style={{ marginBottom: 20 }}>
+                            <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--color-text-muted)', marginBottom: 10, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                                Batch Population Overview
+                            </div>
+                            <div className="stat-cards">
+                                {batchStats.map(b => (
+                                    <StatCard 
+                                        key={b.batch} 
+                                        icon={Users} 
+                                        label={`Batch ${b.batch}`} 
+                                        value={b.total_students} 
+                                        color="blue" 
+                                        sub={`${Math.round(b.avg_solved || 0)} avg problems per student`} 
+                                    />
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
                     {/* Global Target Tracking */}
                     {summary?.total_students > 0 && (
                         <div className="card" style={{ marginBottom: 20 }}>
@@ -182,6 +212,7 @@ export default function Dashboard() {
                         <StatCard icon={Trophy} label="Avg Contest Rating" value={summary?.avg_contest_rating || '—'} color="purple" />
                         <StatCard icon={Globe} label="Best Global Rank" value={summary?.best_global_ranking?.toLocaleString() || '—'} color="cyan" sub="Lower = better" />
                     </div>
+
 
                     {/* Charts Row */}
                     <div className="grid-2" style={{ marginBottom: 20 }}>
@@ -264,8 +295,33 @@ export default function Dashboard() {
                         </div>
                     </div>
 
-                    {/* Department Chart + Top Students */}
+                    {/* Department and Batch Charts */}
                     <div className="grid-2" style={{ marginBottom: 20 }}>
+                        {/* Batch Performance */}
+                        <div className="card">
+                            <div className="card-header">
+                                <div className="card-title">👥 Batch Performance</div>
+                                <div className="card-subtitle">Average problems solved by batch</div>
+                            </div>
+                            <div className="chart-container" style={{ height: 220 }}>
+                                {batchChartData.length > 0 ? (
+                                    <ResponsiveContainer width="100%" height="100%">
+                                        <BarChart data={batchChartData} margin={{ top: 5, right: 5, bottom: 20, left: 0 }}>
+                                            <CartesianGrid strokeDasharray="3 3" stroke="#1e3a5f" />
+                                            <XAxis dataKey="name" tick={{ fill: '#64748b', fontSize: 10 }} />
+                                            <YAxis tick={{ fill: '#64748b', fontSize: 10 }} />
+                                            <Tooltip content={<CustomTooltip />} />
+                                            <Bar dataKey="avg" name="Avg Solved" fill="#f59e0b" radius={[4, 4, 0, 0]} />
+                                        </BarChart>
+                                    </ResponsiveContainer>
+                                ) : (
+                                    <div className="empty-state" style={{ padding: 20 }}>
+                                        <p style={{ color: 'var(--color-text-muted)', fontSize: 12 }}>No batch data available</p>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+
                         {/* Department Performance */}
                         <div className="card">
                             <div className="card-header">
@@ -290,7 +346,9 @@ export default function Dashboard() {
                                 )}
                             </div>
                         </div>
+                    </div>
 
+                    <div style={{ marginBottom: 20 }}>
                         {/* Top 10 Students */}
                         <div className="card">
                             <div className="card-header">

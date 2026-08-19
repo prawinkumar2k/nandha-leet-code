@@ -29,7 +29,9 @@ export default function WelcomeScreen({ onComplete }) {
     return (
         <div className="welcome-screen">
             <div className="welcome-card">
-                <div className="welcome-logo">🏆</div>
+                <div className="welcome-logo">
+                    <img src="/logo.png" alt="LEO" style={{ width: '80px', height: '80px', objectFit: 'contain', filter: 'drop-shadow(0 5px 15px rgba(0,0,0,0.5))' }} />
+                </div>
                 <h1 className="welcome-title">Welcome to LEO</h1>
                 <p className="welcome-desc">
                     Track LeetCode performance of your students daily.<br />

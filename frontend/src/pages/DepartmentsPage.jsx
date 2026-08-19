@@ -21,13 +21,19 @@ function CustomTooltip({ active, payload, label }) {
     );
 }
 
-function downloadDeptReport(department = null) {
-    const url = department
-        ? `http://127.0.0.1:3001/api/reports/export/department?department=${encodeURIComponent(department)}`
-        : `http://127.0.0.1:3001/api/reports/export/department`;
+function downloadDeptReport(department = null, batch = null) {
+    const params = new URLSearchParams();
+    if (department) params.append('department', department);
+    if (batch) params.append('batch', batch);
+    
+    const qs = params.toString();
+    const url = `http://127.0.0.1:3001/api/reports/export/department${qs ? '?' + qs : ''}`;
+    
     const a = document.createElement('a');
     a.href = url;
-    a.download = department ? `LEO_${department}_Report.xlsx` : 'LEO_All_Departments_Report.xlsx';
+    let filename = department ? `LEO_${department}` : 'LEO_All_Departments';
+    if (batch) filename += `_Batch_${batch}`;
+    a.download = `${filename}_Report.xlsx`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -62,7 +68,7 @@ export default function DepartmentsPage() {
                 </div>
                 <button
                     className="btn btn-primary"
-                    onClick={() => downloadDeptReport(null)}
+                    onClick={() => downloadDeptReport(null, selectedBatch)}
                     style={{ display: 'flex', alignItems: 'center', gap: 6 }}
                 >
                     <Download size={15} />
@@ -152,7 +158,7 @@ export default function DepartmentsPage() {
                                     </div>
                                     <button
                                         title={`Download ${dept.department} Report`}
-                                        onClick={() => downloadDeptReport(dept.department)}
+                                        onClick={() => downloadDeptReport(dept.department, selectedBatch)}
                                         style={{
                                             background: `${DEPT_COLORS[i % DEPT_COLORS.length]}18`,
                                             border: `1px solid ${DEPT_COLORS[i % DEPT_COLORS.length]}40`,

@@ -35,7 +35,7 @@ router.get('/', async (req, res) => {
 router.get('/latest', async (req, res) => {
     try {
         const db = getDb();
-        const { date } = req.query;
+        const { date, batch } = req.query;
         let dateCondition = '';
         let queryParams = [];
 
@@ -68,6 +68,10 @@ router.get('/latest', async (req, res) => {
         // Function to fetch summary for a contest
         const getSummary = async (contestName) => {
             if (!contestName) return [];
+            
+            const params = [contestName];
+            if (batch) params.push(batch);
+
             return await db.all(`
               SELECT 
                 s.reg_no,
@@ -80,8 +84,9 @@ router.get('/latest', async (req, res) => {
               FROM students s
               LEFT JOIN contest_stats cs ON s.id = cs.student_id AND cs.contest_name = ?
               WHERE COALESCE(s.is_banned, 0) = 0
+              ${batch ? 'AND s.batch = ?' : ''}
               ORDER BY CASE WHEN cs.problems_solved IS NULL THEN 1 ELSE 0 END, cs.problems_solved DESC, cs.contest_rating DESC
-            `, [contestName]);
+            `, params);
         };
 
         const weeklySummary = dbLatestWeekly ? await getSummary(dbLatestWeekly.contest_name) : [];

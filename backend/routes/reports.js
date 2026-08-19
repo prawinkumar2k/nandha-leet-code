@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { getDb } = require('../database/db');
-const { getDashboardSummary, getDepartmentStats, getDailyReport, getTopStudents, getLowActivityStudents, getDailyChartData, generateExcelReport } = require('../services/reportService');
+const { getDashboardSummary, getDepartmentStats, getBatchStats, getDailyReport, getTopStudents, getLowActivityStudents, getDailyChartData, generateExcelReport } = require('../services/reportService');
 const { exportToCsv } = require('../services/excelService');
 
 router.get('/dashboard', async (req, res) => {
@@ -18,6 +18,15 @@ router.get('/departments', async (req, res) => {
     try {
         const { batch } = req.query;
         const stats = await getDepartmentStats(batch);
+        res.json({ success: true, data: stats });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+});
+
+router.get('/batches', async (req, res) => {
+    try {
+        const stats = await getBatchStats();
         res.json({ success: true, data: stats });
     } catch (error) {
         res.status(500).json({ success: false, message: error.message });
@@ -110,10 +119,11 @@ router.get('/export/excel', async (req, res) => {
 
 router.get('/export/csv', async (req, res) => {
     try {
-        const { date } = req.query;
-        const data = await getDailyReport(date);
+        const { date, batch } = req.query;
+        const data = await getDailyReport(date, batch);
         const csv = exportToCsv(data);
-        const filename = `LeetCode_Report_${date || new Date().toISOString().split('T')[0]}.csv`;
+        const batchStr = batch ? `_${batch}` : '';
+        const filename = `LeetCode_Report${batchStr}_${date || new Date().toISOString().split('T')[0]}.csv`;
 
         res.setHeader('Content-Type', 'text/csv');
         res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
@@ -128,13 +138,14 @@ router.get('/fetch-errors', async (req, res) => {
         const db = getDb();
         // Deduplicate: return only the latest error per student (reg_no)
         const errors = await db.all(`
-            SELECT fe.*
+            SELECT fe.*, s.batch, s.department
             FROM fetch_errors fe
             INNER JOIN (
                 SELECT reg_no, MAX(error_at) AS latest_at
                 FROM fetch_errors
                 GROUP BY reg_no
             ) latest ON fe.reg_no = latest.reg_no AND fe.error_at = latest.latest_at
+            LEFT JOIN students s ON fe.reg_no = s.reg_no
             ORDER BY fe.error_at DESC
             LIMIT 200
         `);
@@ -163,19 +174,22 @@ router.get('/export-errors-excel', async (req, res) => {
 
         // Latest error per student
         const errors = await db.all(`
-            SELECT fe.*
+            SELECT fe.*, s.batch, s.department
             FROM fetch_errors fe
             INNER JOIN (
                 SELECT reg_no, MAX(error_at) AS latest_at
                 FROM fetch_errors GROUP BY reg_no
             ) latest ON fe.reg_no = latest.reg_no AND fe.error_at = latest.latest_at
+            LEFT JOIN students s ON fe.reg_no = s.reg_no
             ORDER BY fe.error_at DESC
         `);
 
-        const header = ['Reg No', 'Name', 'Current URL (Broken)', 'Correct URL (Fill This)', 'Error Reason'];
+        const header = ['Reg No', 'Name', 'Batch', 'Department', 'Current URL (Broken)', 'Correct URL (Fill This)', 'Error Reason'];
         const rows = errors.map(e => [
             e.reg_no,
             e.student_name,
+            e.batch || '',
+            e.department || '',
             e.profile_url || '',
             '', // user fills this
             e.error_reason || ''
@@ -185,7 +199,7 @@ router.get('/export-errors-excel', async (req, res) => {
         const ws = XLSX.utils.aoa_to_sheet([header, ...rows]);
 
         // Column widths
-        ws['!cols'] = [{ wch: 18 }, { wch: 22 }, { wch: 40 }, { wch: 40 }, { wch: 50 }];
+        ws['!cols'] = [{ wch: 18 }, { wch: 22 }, { wch: 12 }, { wch: 12 }, { wch: 40 }, { wch: 40 }, { wch: 50 }];
 
         XLSX.utils.book_append_sheet(wb, ws, 'Fetch Errors');
         const buffer = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' });
@@ -204,7 +218,22 @@ router.get('/export/department', async (req, res) => {
     try {
         const db = getDb();
         const XLSX = require('xlsx');
-        const { department } = req.query; // optional: filter to single dept
+        const { department, batch } = req.query; // optional: filter to single dept / batch
+
+        let queryParams = [];
+        let conditions = ['s.is_banned = 0'];
+
+        if (department) {
+            conditions.push('s.department = ?');
+            queryParams.push(department);
+        }
+
+        if (batch) {
+            conditions.push('s.batch = ?');
+            queryParams.push(batch);
+        }
+
+        const whereClause = conditions.join(' AND ');
 
         // Fetch all students with their latest stats
         const students = await db.all(`
@@ -219,10 +248,9 @@ router.get('/export/department', async (req, res) => {
             FROM students s
             LEFT JOIN daily_stats ds ON ds.student_id = s.id
                 AND ds.date = (SELECT MAX(date) FROM daily_stats WHERE student_id = s.id)
-            WHERE s.is_banned = 0
-            ${department ? 'AND s.department = ?' : ''}
+            WHERE ${whereClause}
             ORDER BY s.department, s.reg_no
-        `, department ? [department] : []);
+        `, queryParams);
 
         const wb = XLSX.utils.book_new();
         const today = new Date().toISOString().split('T')[0];
@@ -327,12 +355,13 @@ router.get('/contest-intervals/list', async (req, res) => {
 router.get('/contest-intervals/report', async (req, res) => {
     try {
         const db = getDb();
-        const { contestName } = req.query;
-        if (!contestName) return res.status(400).json({ success: false, message: 'contestName required' });
+        const { contestName, contest_name, batch } = req.query;
+        const targetContest = contestName || contest_name;
+        if (!targetContest) return res.status(400).json({ success: false, message: 'contestName required' });
 
         // Get all students who participated or at least are in the system and we know about their stats.
         // We will just do a sweeping check. Let's find the `contest_date` first.
-        const contestInfo = await db.get(`SELECT MAX(contest_date) as cdate FROM contest_stats WHERE contest_name = ?`, [contestName]);
+        const contestInfo = await db.get(`SELECT MAX(contest_date) as cdate FROM contest_stats WHERE contest_name = ?`, [targetContest]);
         if (!contestInfo || !contestInfo.cdate) return res.json({ success: true, data: [] });
 
         const endDateStr = contestInfo.cdate;
@@ -349,11 +378,11 @@ router.get('/contest-intervals/report', async (req, res) => {
         const startMap = {}; startStats.forEach(r => startMap[r.student_id] = r.total);
 
         // 3. Get Contest Stats (how many they solved IN the contest)
-        const cStats = await db.all(`SELECT student_id, problems_solved FROM contest_stats WHERE contest_name = ?`, [contestName]);
+        const cStats = await db.all(`SELECT student_id, problems_solved FROM contest_stats WHERE contest_name = ?`, [targetContest]);
         const cMap = {}; cStats.forEach(r => cMap[r.student_id] = r.problems_solved);
 
         // Combine
-        const students = await db.all(`SELECT id as student_id, reg_no, name, department, batch FROM students`);
+        const students = await db.all(`SELECT id as student_id, reg_no, name, department, batch FROM students ${batch ? "WHERE batch = ?" : ""}`, batch ? [batch] : []);
 
         const report = students.map(s => {
             const startT = startMap[s.student_id] || 0;

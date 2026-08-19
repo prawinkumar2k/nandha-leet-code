@@ -88,7 +88,7 @@ function ContestCountdown({ contest }) {
 
 // ── Main page ──────────────────────────────────────────────────────────────────
 export default function Contests() {
-    const { selectedDate } = useDate();
+    const { selectedDate, selectedBatch } = useDate();
     const [weeklyData, setWeeklyData] = useState({ contest: null, data: [] });
     const [biweeklyData, setBiweeklyData] = useState({ contest: null, data: [] });
     const [activeTab, setActiveTab] = useState('weekly');
@@ -96,7 +96,7 @@ export default function Contests() {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        Promise.all([getLatestContest(selectedDate || undefined), getUpcomingContests()])
+        Promise.all([getLatestContest(selectedDate || undefined, selectedBatch || undefined), getUpcomingContests()])
             .then(([contestRes, upcomingData]) => {
                 setWeeklyData(contestRes.weekly || { contest: null, data: [] });
                 setBiweeklyData(contestRes.biweekly || { contest: null, data: [] });
@@ -104,7 +104,7 @@ export default function Contests() {
             })
             .catch(e => console.error(e))
             .finally(() => setLoading(false));
-    }, [selectedDate]);
+    }, [selectedDate, selectedBatch]);
 
     const currentView = activeTab === 'weekly' ? weeklyData : biweeklyData;
     const latestContest = currentView.contest;

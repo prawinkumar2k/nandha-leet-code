@@ -2,8 +2,10 @@ import { useState, useEffect } from 'react';
 import { getContestIntervalLists, getContestIntervalReport } from '../services/api';
 import { Target, Download, Building2, Flame } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { useDate } from '../context/DateContext';
 
 export default function ContestProgress() {
+    const { selectedBatch } = useDate();
     const [contests, setContests] = useState([]);
     const [selectedContest, setSelectedContest] = useState('');
     const [report, setReport] = useState([]);
@@ -21,12 +23,12 @@ export default function ContestProgress() {
     useEffect(() => {
         if (!selectedContest) return;
         setLoading(true);
-        getContestIntervalReport(selectedContest).then(res => {
+        getContestIntervalReport(selectedContest, selectedBatch).then(res => {
             if (res.success) setReport(res.data || []);
             else toast.error("Failed to load report");
         }).catch(() => toast.error("Error loading report"))
             .finally(() => setLoading(false));
-    }, [selectedContest]);
+    }, [selectedContest, selectedBatch]);
 
     const handleExport = () => {
         if (!report.length) return;

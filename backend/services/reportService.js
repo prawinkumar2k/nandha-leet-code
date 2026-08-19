@@ -129,6 +129,28 @@ async function getDepartmentStats(batch) {
   `, queryParams);
 }
 
+// Get batch-wise stats
+async function getBatchStats() {
+  const db = getDb();
+  return await db.all(`
+    SELECT 
+      COALESCE(s.batch, 'Unknown') as batch,
+      COUNT(DISTINCT s.id) as total_students,
+      AVG(COALESCE(ds.total_solved, 0)) as avg_solved,
+      SUM(COALESCE(ds.total_solved, 0)) as total_solved,
+      AVG(COALESCE(ds.today_solved, 0)) as avg_today
+    FROM students s
+    LEFT JOIN daily_stats ds ON s.id = ds.student_id 
+      AND ds.date = (
+        SELECT MAX(date) FROM daily_stats WHERE student_id = s.id
+      )
+    WHERE COALESCE(s.is_banned, 0) = 0
+      AND s.batch IS NOT NULL AND s.batch != ""
+    GROUP BY s.batch
+    ORDER BY batch DESC
+  `);
+}
+
 // Get daily report for a specific date
 async function getDailyReport(date, batch) {
   const db = getDb();
@@ -316,6 +338,7 @@ module.exports = {
   getDashboardSummary,
   getLatestStatsForStudents,
   getDepartmentStats,
+  getBatchStats,
   getDailyReport,
   getTopStudents,
   getLowActivityStudents,
