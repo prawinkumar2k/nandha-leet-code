@@ -139,8 +139,7 @@ export default function Students() {
         { key: 'name', label: 'Student Name', sortable: true },
         { key: 'department', label: 'Department', sortable: false },
         { key: 'batch', label: 'Batch', sortable: false },
-        { key: 'top_language', label: 'Language', sortable: false },
-        { key: 'badges', label: 'Badges', sortable: false },
+        { key: 'languages', label: 'Languages', sortable: false },
         { key: 'total_solved', label: 'Total', sortable: true },
         { key: 'easy_solved', label: 'Easy', sortable: true },
         { key: 'medium_solved', label: 'Medium', sortable: true },
@@ -221,7 +220,7 @@ export default function Students() {
                             {cols.map(col => (
                                 <th
                                     key={col.key}
-                                    className={sortBy === col.key ? 'sorted' : ''}
+                                    className={`${sortBy === col.key ? 'sorted' : ''} ${col.key === 'actions' ? 'actions-col-th' : ''}`}
                                     onClick={() => col.sortable && handleSort(col.key)}
                                     style={{ cursor: col.sortable ? 'pointer' : 'default' }}
                                 >
@@ -260,7 +259,23 @@ export default function Students() {
                                             {i < 3 ? ['🥇', '🥈', '🥉'][i] : s.rank}
                                         </span>
                                     </td>
-                                    <td><span className="td-reg">{s.reg_no}</span></td>
+                                    <td>
+                                        {s.leetcode_profile_url ? (
+                                            <a 
+                                                href={s.leetcode_profile_url} 
+                                                target="_blank" 
+                                                rel="noopener noreferrer"
+                                                className="td-reg"
+                                                style={{ color: 'var(--color-blue)', textDecoration: 'underline', textUnderlineOffset: '2px' }}
+                                                title="Open LeetCode Profile"
+                                                onClick={(e) => e.stopPropagation()}
+                                            >
+                                                {s.reg_no} <ExternalLink size={10} style={{ display: 'inline', marginBottom: 2 }} />
+                                            </a>
+                                        ) : (
+                                            <span className="td-reg">{s.reg_no}</span>
+                                        )}
+                                    </td>
                                     <td>
                                         <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                                             <span className="td-name">{s.name}</span>
@@ -277,8 +292,24 @@ export default function Students() {
                                     </td>
                                     <td><span className="td-dept">{s.department || '—'}</span></td>
                                     <td><span className="td-dept" style={{ color: 'var(--color-purple)' }}>{s.batch || '—'}</span></td>
-                                    <td><span className="td-dept" style={{ color: 'var(--color-brand)' }}>{s.top_language || '—'}</span></td>
-                                    <td><span className="td-dept" style={{ fontWeight: 600 }}>{(() => { try { return JSON.parse(s.badges).length || '—'; } catch { return '—'; } })()}</span></td>
+                                    <td>
+                                        <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', minWidth: 120 }}>
+                                            {(() => {
+                                                try {
+                                                    const langs = JSON.parse(s.language_stats || '[]');
+                                                    if (!langs.length) return <span className="td-dept">—</span>;
+                                                    // Show top 3 languages
+                                                    return langs.slice(0, 3).map(l => (
+                                                        <span key={l.languageName} style={{ fontSize: 10, padding: '2px 6px', backgroundColor: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 4, whiteSpace: 'nowrap' }}>
+                                                            {l.languageName}: <strong style={{ color: 'var(--color-brand)' }}>{l.problemsSolved}</strong>
+                                                        </span>
+                                                    ));
+                                                } catch {
+                                                    return <span className="td-dept">—</span>;
+                                                }
+                                            })()}
+                                        </div>
+                                    </td>
                                     <td style={{ fontFamily: 'var(--font-mono)', fontWeight: 700 }}>{(s.total_solved || 0).toLocaleString()}</td>
                                     <td><span className="td-easy">{s.easy_solved || 0}</span></td>
                                     <td><span className="td-medium">{s.medium_solved || 0}</span></td>
@@ -292,7 +323,7 @@ export default function Students() {
                                     </td>
                                     <td><span className="td-rating">{s.contest_rating ? Math.round(s.contest_rating) : '—'}</span></td>
                                     <td><span className="td-ranking">{s.global_ranking ? s.global_ranking.toLocaleString() : '—'}</span></td>
-                                    <td>
+                                    <td className="actions-col-td">
                                         <div className="td-actions" onClick={e => e.stopPropagation()}>
                                             <button
                                                 className="btn btn-secondary btn-sm btn-icon"

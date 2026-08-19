@@ -19,6 +19,7 @@ router.get('/', async (req, res) => {
         s.leetcode_username,
         s.badges,
         s.top_language,
+        s.language_stats,
         s.admin_tags,
         s.created_at,
         s.updated_at,
@@ -59,9 +60,17 @@ router.get('/', async (req, res) => {
             params.push(searchParam, searchParam, searchParam);
         }
 
-        if (department && department !== 'all') {
+        let filterDept = department;
+        if (!filterDept) {
+            try {
+                const setting = await db.get("SELECT value FROM app_settings WHERE key = 'default_department'");
+                if (setting && setting.value) filterDept = setting.value;
+            } catch (e) { console.error(e); }
+        }
+
+        if (filterDept && filterDept !== 'all') {
             conditions.push(`s.department = ?`);
-            params.push(department);
+            params.push(filterDept);
         }
 
         if (conditions.length > 0) {

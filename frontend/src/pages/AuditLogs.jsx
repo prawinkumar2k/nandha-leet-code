@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { getAuditLogs } from '../services/api';
-import { ShieldAlert, RefreshCw, AlertTriangle, CheckCircle2 } from 'lucide-react';
+import { getAuditLogs, deleteAuditLog, clearAuditLogs } from '../services/api';
+import { ShieldAlert, RefreshCw, AlertTriangle, CheckCircle2, Trash2, X } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 export default function AuditLogs() {
@@ -27,6 +27,27 @@ export default function AuditLogs() {
         fetchLogs();
     }, []);
 
+    const handleDismiss = async (id) => {
+        try {
+            await deleteAuditLog(id);
+            setLogs(logs.filter(l => l.id !== id));
+            toast.success("Log dismissed");
+        } catch (error) {
+            toast.error("Failed to dismiss log");
+        }
+    };
+
+    const handleClearAll = async () => {
+        if (!confirm("Are you sure you want to clear all audit logs?")) return;
+        try {
+            await clearAuditLogs();
+            setLogs([]);
+            toast.success("All logs cleared");
+        } catch (error) {
+            toast.error("Failed to clear logs");
+        }
+    };
+
     return (
         <div>
             <div className="page-header">
@@ -35,6 +56,11 @@ export default function AuditLogs() {
                     <p className="page-desc">Review automatically flagged suspicious spikes or abnormal data shrinks.</p>
                 </div>
                 <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+                    {logs.length > 0 && (
+                        <button className="btn btn-secondary" onClick={handleClearAll} style={{ color: 'var(--color-hard)' }}>
+                            <Trash2 size={14} /> Clear All
+                        </button>
+                    )}
                     <button className="btn btn-secondary" onClick={fetchLogs}>
                         <RefreshCw size={14} className={loading ? "spin" : ""} />
                         Refresh
@@ -63,6 +89,7 @@ export default function AuditLogs() {
                                     <th style={{ padding: '12px 16px' }}>Student</th>
                                     <th style={{ padding: '12px 16px' }}>Event Type</th>
                                     <th style={{ padding: '12px 16px' }}>Details / Evidence</th>
+                                    <th style={{ padding: '12px 16px', textAlign: 'right' }}>Action</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -72,7 +99,7 @@ export default function AuditLogs() {
                                             {new Date(log.timestamp).toLocaleString()}
                                         </td>
                                         <td style={{ padding: '12px 16px' }}>
-                                            <a href={`#/students/${log.reg_no}`} style={{ fontWeight: 600, color: 'var(--color-text-primary)', textDecoration: 'none' }}>
+                                            <a href={`#/students/${log.student_id}`} style={{ fontWeight: 600, color: 'var(--color-text-primary)', textDecoration: 'none' }}>
                                                 {log.name}
                                             </a>
                                             <div style={{ fontSize: 11, color: 'var(--color-text-muted)' }}>{log.reg_no} • {log.department || 'N/A'}</div>
@@ -85,6 +112,15 @@ export default function AuditLogs() {
                                         </td>
                                         <td style={{ padding: '12px 16px', fontSize: 13, color: 'var(--color-text-secondary)', lineHeight: 1.4 }}>
                                             {log.details}
+                                        </td>
+                                        <td style={{ padding: '12px 16px', textAlign: 'right' }}>
+                                            <button 
+                                                className="btn btn-secondary btn-sm btn-icon" 
+                                                title="Dismiss Log"
+                                                onClick={() => handleDismiss(log.id)}
+                                            >
+                                                <X size={14} />
+                                            </button>
                                         </td>
                                     </tr>
                                 ))}

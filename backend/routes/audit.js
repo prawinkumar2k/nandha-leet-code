@@ -18,4 +18,24 @@ router.get('/', async (req, res) => {
     }
 });
 
+router.delete('/:id', async (req, res) => {
+    try {
+        const db = getDb();
+        await db.run('DELETE FROM audit_logs WHERE id = ?', [req.params.id]);
+        res.json({ success: true });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+});
+
+router.delete('/', async (req, res) => {
+    try {
+        const db = getDb();
+        await db.run('DELETE FROM audit_logs');
+        res.json({ success: true });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+});
+
 module.exports = router;

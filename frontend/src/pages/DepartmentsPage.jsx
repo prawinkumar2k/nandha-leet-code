@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { BarChart2, Building2, Users, TrendingUp, Star } from 'lucide-react';
+import { BarChart2, Building2, Users, TrendingUp, Star, Download } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { getDepartmentStats } from '../services/api';
 
@@ -18,6 +18,18 @@ function CustomTooltip({ active, payload, label }) {
             ))}
         </div>
     );
+}
+
+function downloadDeptReport(department = null) {
+    const url = department
+        ? `http://127.0.0.1:3001/api/reports/export/department?department=${encodeURIComponent(department)}`
+        : `http://127.0.0.1:3001/api/reports/export/department`;
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = department ? `LEO_${department}_Report.xlsx` : 'LEO_All_Departments_Report.xlsx';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
 }
 
 export default function DepartmentsPage() {
@@ -46,7 +58,16 @@ export default function DepartmentsPage() {
                     <h1 className="page-title">🏫 Departments</h1>
                     <p className="page-desc">Department-wise performance analytics</p>
                 </div>
+                <button
+                    className="btn btn-primary"
+                    onClick={() => downloadDeptReport(null)}
+                    style={{ display: 'flex', alignItems: 'center', gap: 6 }}
+                >
+                    <Download size={15} />
+                    Export All Departments
+                </button>
             </div>
+
 
             {loading ? (
                 <div className="empty-state"><div className="spinner spinner-lg"></div></div>
@@ -119,7 +140,7 @@ export default function DepartmentsPage() {
                                     }}>
                                         <Building2 size={18} color={DEPT_COLORS[i % DEPT_COLORS.length]} />
                                     </div>
-                                    <div>
+                                    <div style={{ flex: 1 }}>
                                         <div style={{ fontWeight: 700, fontSize: 15, color: 'var(--color-text-primary)' }}>
                                             {dept.department || 'Unknown'}
                                         </div>
@@ -127,7 +148,22 @@ export default function DepartmentsPage() {
                                             {dept.total_students} students
                                         </div>
                                     </div>
+                                    <button
+                                        title={`Download ${dept.department} Report`}
+                                        onClick={() => downloadDeptReport(dept.department)}
+                                        style={{
+                                            background: `${DEPT_COLORS[i % DEPT_COLORS.length]}18`,
+                                            border: `1px solid ${DEPT_COLORS[i % DEPT_COLORS.length]}40`,
+                                            borderRadius: 8, padding: '5px 10px',
+                                            cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5,
+                                            color: DEPT_COLORS[i % DEPT_COLORS.length], fontSize: 12, fontWeight: 600
+                                        }}
+                                    >
+                                        <Download size={13} />
+                                        Excel
+                                    </button>
                                 </div>
+
 
                                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
                                     <div style={{ textAlign: 'center', padding: '8px', borderRadius: 8, background: 'rgba(255,255,255,0.03)' }}>

@@ -41,15 +41,26 @@ function extractUsername(profileUrl) {
 // Sleep utility for rate limiting
 const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
-// Retry with exponential backoff
+// Retry with exponential backoff — handles 429 rate limits and 403 blocks
 async function retryRequest(fn, maxRetries = 3) {
   for (let i = 0; i < maxRetries; i++) {
     try {
       return await fn();
     } catch (error) {
       if (i === maxRetries - 1) throw error;
-      console.log(`429 Rate Limit Hit - Backing off for ${Math.pow(2, i)} seconds`);
-      await sleep(1000 * (Math.pow(2, i))); // 1s, 2s, 4s
+
+      const status = error?.response?.status;
+      if (status === 429 || status === 403) {
+        // LeetCode is rate limiting — wait much longer before retrying
+        const waitSec = 10 * (i + 1); // 10s, 20s, 30s
+        console.log(`[Rate Limit ${status}] Backing off for ${waitSec}s (attempt ${i + 1}/${maxRetries})`);
+        await sleep(waitSec * 1000);
+      } else {
+        // Network or other error — shorter backoff
+        const waitMs = 1500 * Math.pow(2, i); // 1.5s, 3s, 6s
+        console.log(`[Error ${status || 'NETWORK'}] Retrying in ${waitMs}ms (attempt ${i + 1}/${maxRetries})`);
+        await sleep(waitMs);
+      }
     }
   }
 }
@@ -226,19 +237,12 @@ async function fetchStudentData(profileUrl) {
     query getCombinedData($username: String!) {
       matchedUser(username: $username) {
         username
-        badges { name }
         languageProblemCount {
           languageName
           problemsSolved
         }
-        tagProblemCounts {
-          advanced { name problemsSolved }
-          intermediate { name problemsSolved }
-          fundamental { name problemsSolved }
-        }
         submitStatsGlobal {
           acSubmissionNum { difficulty count }
-          totalSubmissionNum { difficulty count }
         }
         profile {
           ranking
@@ -248,7 +252,6 @@ async function fetchStudentData(profileUrl) {
         rating
         globalRanking
         attendedContestsCount
-        badge { name }
       }
       userContestRankingHistory(username: $username) {
         attended
@@ -278,9 +281,9 @@ async function fetchStudentData(profileUrl) {
     if (!d) throw new Error(`No data returned for user "${username}"`);
 
     const user = d.matchedUser || {};
-    if (!user) throw new Error(`User "${username}" not found on LeetCode`);
+    if (!user.username) throw new Error(`User "${username}" not found on LeetCode`);
 
-    // Parse solved stats and submission stats
+    // Parse solved stats
     const stats = { total: 0, easy: 0, medium: 0, hard: 0 };
     for (const stat of user.submitStatsGlobal?.acSubmissionNum || []) {
       const diff = stat.difficulty?.toLowerCase();
@@ -291,45 +294,13 @@ async function fetchStudentData(profileUrl) {
     }
     if (stats.total === 0) stats.total = stats.easy + stats.medium + stats.hard;
 
-    let totalSubmissionsCount = 0;
-    for (const stat of user.submitStatsGlobal?.totalSubmissionNum || []) {
-      if (stat.difficulty?.toLowerCase() === 'all') {
-        totalSubmissionsCount = stat.count;
-        break;
-      }
-    }
-
-    let acceptance_rate = 0;
-    if (totalSubmissionsCount > 0) {
-      acceptance_rate = (stats.total / totalSubmissionsCount) * 100;
-    }
-
-    // Parse Badges
-    const badgesArray = (user.badges || []).map(b => b.name);
-    const badgesString = JSON.stringify(badgesArray);
-
-    // Parse Top Language
-    let topLanguage = '';
-    let maxLangSolved = 0;
-    for (const lang of user.languageProblemCount || []) {
-      if (lang.problemsSolved > maxLangSolved) {
-        maxLangSolved = lang.problemsSolved;
-        topLanguage = lang.languageName;
-      }
-    }
-
-    // Parse DSA skill tag counts
-    let fundamentalCount = 0;
-    let intermediateCount = 0;
-    let advancedCount = 0;
-    for (const item of user.tagProblemCounts?.fundamental || []) fundamentalCount += item.problemsSolved;
-    for (const item of user.tagProblemCounts?.intermediate || []) intermediateCount += item.problemsSolved;
-    for (const item of user.tagProblemCounts?.advanced || []) advancedCount += item.problemsSolved;
-
     // Parse contest data — userContestRanking is null for non-participants
     const contestRanking = d.userContestRanking || null;
     const contestHistory = (d.userContestRankingHistory || []).filter(c => c.attended);
     const latestContest = getLatestContest(contestHistory);
+
+    // Parse language stats
+    const language_stats = JSON.stringify(user.languageProblemCount || []);
 
     // profile.ranking = the rank shown on their public profile (ALL users have this)
     // contestRanking.rating = only for contest participants
@@ -357,10 +328,6 @@ async function fetchStudentData(profileUrl) {
 
     return {
       username,
-      badges: badgesString,
-      top_language: topLanguage,
-      acceptance_rate: Number(acceptance_rate.toFixed(2)),
-      total_submissions: totalSubmissionsCount,
       total_solved: stats.total,
       easy_solved: stats.easy,
       medium_solved: stats.medium,
@@ -373,11 +340,7 @@ async function fetchStudentData(profileUrl) {
       contest_total: latestContest.total,
       latest_contest: latestContest,
       contest_history: contestHistory.slice(0, 20),
-      fundamental_solved: fundamentalCount,
-      intermediate_solved: intermediateCount,
-      advanced_solved: advancedCount,
-      language_stats: JSON.stringify(user.languageProblemCount || []),
-      recent_submissions: JSON.stringify(recentSubmissions)
+      language_stats
     };
   });
 }

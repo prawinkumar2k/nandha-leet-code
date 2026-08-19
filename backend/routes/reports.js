@@ -35,8 +35,21 @@ router.get('/top-students', async (req, res) => {
 
 router.get('/low-activity', async (req, res) => {
     try {
-        const { threshold = 0 } = req.query;
-        const students = await getLowActivityStudents(parseInt(threshold));
+        const db = getDb();
+        let dbThreshold = 0;
+        try {
+            const setting = await db.get("SELECT value FROM app_settings WHERE key = 'low_activity_threshold'");
+            if (setting && setting.value) dbThreshold = parseInt(setting.value, 10);
+        } catch (e) {
+            console.error(e);
+        }
+
+        let threshold = parseInt(req.query.threshold, 10);
+        if (isNaN(threshold) || req.query.threshold === '0') {
+            threshold = dbThreshold || 0; // Use DB setting if query is 0 or missing
+        }
+
+        const students = await getLowActivityStudents(threshold);
         res.json({ success: true, data: students });
     } catch (error) {
         res.status(500).json({ success: false, message: error.message });
@@ -177,7 +190,114 @@ router.get('/export-errors-excel', async (req, res) => {
     }
 });
 
+// Department-wise detailed Excel export — one sheet per dept + one "All Departments" sheet
+router.get('/export/department', async (req, res) => {
+    try {
+        const db = getDb();
+        const XLSX = require('xlsx');
+        const { department } = req.query; // optional: filter to single dept
+
+        // Fetch all students with their latest stats
+        const students = await db.all(`
+            SELECT 
+                s.reg_no, s.name, s.department, s.batch,
+                s.leetcode_profile_url, s.leetcode_username,
+                ds.total_solved, ds.easy_solved, ds.medium_solved, ds.hard_solved,
+                ds.today_solved, ds.yesterday_solved,
+                ds.contest_rating, ds.global_ranking,
+                ds.contest_solved, ds.contest_total,
+                ds.date AS last_updated
+            FROM students s
+            LEFT JOIN daily_stats ds ON ds.student_id = s.id
+                AND ds.date = (SELECT MAX(date) FROM daily_stats WHERE student_id = s.id)
+            WHERE s.is_banned = 0
+            ${department ? 'AND s.department = ?' : ''}
+            ORDER BY s.department, s.reg_no
+        `, department ? [department] : []);
+
+        const wb = XLSX.utils.book_new();
+        const today = new Date().toISOString().split('T')[0];
+
+        const HEADER = [
+            'S.No', 'Reg No', 'Name', 'Department', 'Batch',
+            'LeetCode Profile URL', 'LeetCode Username',
+            'Total Solved', 'Easy', 'Medium', 'Hard',
+            'Today Solved', 'Yesterday Solved',
+            'Contest Rating', 'Global Ranking',
+            'Contest Solved', 'Contest Total',
+            'Last Updated'
+        ];
+
+        function buildRows(list) {
+            return list.map((s, i) => [
+                i + 1,
+                s.reg_no || '',
+                s.name || '',
+                s.department || '',
+                s.batch || '',
+                s.leetcode_profile_url || '',
+                s.leetcode_username || '',
+                s.total_solved || 0,
+                s.easy_solved || 0,
+                s.medium_solved || 0,
+                s.hard_solved || 0,
+                s.today_solved || 0,
+                s.yesterday_solved || 0,
+                s.contest_rating || 0,
+                s.global_ranking || 0,
+                s.contest_solved || 0,
+                s.contest_total || 0,
+                s.last_updated || ''
+            ]);
+        }
+
+        function styleSheet(ws, rowCount) {
+            ws['!cols'] = [
+                { wch: 5 }, { wch: 16 }, { wch: 24 }, { wch: 12 }, { wch: 8 },
+                { wch: 40 }, { wch: 22 },
+                { wch: 12 }, { wch: 7 }, { wch: 9 }, { wch: 7 },
+                { wch: 12 }, { wch: 15 },
+                { wch: 14 }, { wch: 14 },
+                { wch: 14 }, { wch: 13 },
+                { wch: 14 }
+            ];
+            return ws;
+        }
+
+        // "All Departments" sheet
+        const allRows = buildRows(students);
+        const wsAll = XLSX.utils.aoa_to_sheet([HEADER, ...allRows]);
+        styleSheet(wsAll);
+        XLSX.utils.book_append_sheet(wb, wsAll, 'All Departments');
+
+        // One sheet per department
+        const depts = [...new Set(students.map(s => s.department).filter(Boolean))];
+        for (const dept of depts) {
+            const deptStudents = students.filter(s => s.department === dept);
+            const rows = buildRows(deptStudents);
+            const ws = XLSX.utils.aoa_to_sheet([HEADER, ...rows]);
+            styleSheet(ws);
+            // Sheet name max 31 chars
+            const sheetName = dept.substring(0, 31);
+            XLSX.utils.book_append_sheet(wb, ws, sheetName);
+        }
+
+        const buffer = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' });
+        const filename = department
+            ? `LEO_${department}_Report_${today}.xlsx`
+            : `LEO_All_Departments_Report_${today}.xlsx`;
+
+        res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+        res.send(buffer);
+    } catch (error) {
+        console.error('Dept Export Error:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
 // -------------- Feature 6: Contest Interval Tracking --------------
+
 
 router.get('/contest-intervals/list', async (req, res) => {
     try {

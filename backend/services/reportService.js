@@ -60,12 +60,15 @@ async function getLatestStatsForStudents() {
 
   return await db.all(`
     SELECT 
-      s.id,
       s.reg_no,
       s.name,
       s.department,
+      s.batch,
       s.leetcode_profile_url,
       s.leetcode_username,
+      s.top_language,
+      s.language_stats,
+      s.badges,
       ds.date,
       ds.total_solved,
       ds.easy_solved,
@@ -77,6 +80,8 @@ async function getLatestStatsForStudents() {
       ds.contest_total,
       ds.contest_rating,
       ds.global_ranking,
+      ds.acceptance_rate,
+      ds.total_submissions,
       ds.fetched_at,
       ds.data_source
     FROM students s
@@ -123,6 +128,12 @@ async function getDailyReport(date) {
       s.reg_no,
       s.name,
       s.department,
+      s.batch,
+      s.leetcode_profile_url,
+      s.leetcode_username,
+      s.top_language,
+      s.language_stats,
+      s.badges,
       COALESCE(ds.total_solved, 0) as total_solved,
       COALESCE(ds.easy_solved, 0) as easy_solved,
       COALESCE(ds.medium_solved, 0) as medium_solved,
@@ -132,7 +143,9 @@ async function getDailyReport(date) {
       COALESCE(ds.contest_solved, 0) as contest_solved,
       COALESCE(ds.contest_total, 4) as contest_total,
       COALESCE(ds.contest_rating, 0) as contest_rating,
-      COALESCE(ds.global_ranking, 0) as global_ranking
+      COALESCE(ds.global_ranking, 0) as global_ranking,
+      COALESCE(ds.acceptance_rate, 0) as acceptance_rate,
+      COALESCE(ds.total_submissions, 0) as total_submissions
     FROM students s
     LEFT JOIN daily_stats ds ON s.id = ds.student_id AND ds.date = ?
     WHERE COALESCE(s.is_banned, 0) = 0

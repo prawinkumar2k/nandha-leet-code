@@ -1,9 +1,8 @@
 node_modules/
-release/
 data/
-*.exe
 *.zip
 *.db
 .env
+release/win-unpacked/
 .idea/
 .vscode/

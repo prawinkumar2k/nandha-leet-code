@@ -49,6 +49,22 @@ async function processStudent(studentId, profileUrl, db) {
             // Normal daily differential past the first day
             todaySolved = Math.max(0, data.total_solved - prevStats.total_solved);
 
+            // Audit Log: Data Shrink (Total solved dropped)
+            if (data.total_solved < prevStats.total_solved) {
+                await db.run(
+                    `INSERT INTO audit_logs (student_id, type, details) VALUES (?, ?, ?)`,
+                    [studentId, 'SHRINK', `Total solved decreased from ${prevStats.total_solved} to ${data.total_solved}`]
+                );
+            }
+
+            // Audit Log: Massive Spike (Cheating suspicion)
+            if (todaySolved >= 30) {
+                await db.run(
+                    `INSERT INTO audit_logs (student_id, type, details) VALUES (?, ?, ?)`,
+                    [studentId, 'SPIKE', `Abnormal spike detected: ${todaySolved} problems solved in a single day`]
+                );
+            }
+
             // Check yesterday
             const yesterdayStats = await db.get(
                 `SELECT today_solved FROM daily_stats WHERE student_id = ? AND date = ?`,
@@ -58,34 +74,19 @@ async function processStudent(studentId, profileUrl, db) {
 
         } else {
             // Absolute first tracking day (no previous day stats)
-            // Regardless of buggy 0-value ghost records, ALWAYS force their real-time recent stats for day 1!
             todaySolved = data.recent_today || 0;
             yesterdaySolved = data.recent_yesterday || 0;
         }
 
-        // Feature 7: Suspicious Spike Detection
-        let suspicious = false;
-        if (prevStats && data.total_solved < prevStats.total_solved) {
-            suspicious = true;
-        }
-        if (todaySolved > 50) {
-            suspicious = true;
-        }
-
-        if (suspicious) {
-            const student = await db.get('SELECT admin_tags FROM students WHERE id = ?', [studentId]);
-            let currentTags = student.admin_tags || '';
-            if (!currentTags.includes('Suspicious_Spike')) {
-                const newTags = currentTags ? `${currentTags}, Suspicious_Spike` : 'Suspicious_Spike';
-                data.admin_tags = newTags;
+        // Audit Log: Global Ranking dropped to 0 (Potential LeetCode Ban)
+        if (data.global_ranking === 0 && prevStats) {
+            const prevRank = await db.get(`SELECT global_ranking FROM daily_stats WHERE student_id = ? AND global_ranking > 0 ORDER BY date DESC LIMIT 1`, [studentId]);
+            if (prevRank && prevRank.global_ranking > 0) {
+                await db.run(
+                    `INSERT INTO audit_logs (student_id, type, details) VALUES (?, ?, ?)`,
+                    [studentId, 'BANNED', `Global ranking vanished (was ${prevRank.global_ranking}). Account might be banned by LeetCode.`]
+                );
             }
-
-            // Insert audit log
-            const detailMsg = todaySolved > 50
-                ? `Suspicious count jump: solved ${todaySolved} problems in one day.`
-                : `Total count shrunk: dropped from ${prevStats.total_solved} to ${data.total_solved}.`;
-
-            await db.run('INSERT INTO audit_logs (student_id, type, details) VALUES (?, ?, ?)', [studentId, 'SUSPICIOUS_SPIKE', detailMsg]);
         }
 
         // Upsert daily stats
@@ -93,8 +94,8 @@ async function processStudent(studentId, profileUrl, db) {
       INSERT INTO daily_stats 
         (student_id, date, total_solved, easy_solved, medium_solved, hard_solved,
          yesterday_solved, today_solved, contest_solved, contest_total, 
-         contest_rating, global_ranking, acceptance_rate, total_submissions, data_source, fetched_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'automatic', CURRENT_TIMESTAMP)
+         contest_rating, global_ranking, data_source, fetched_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'automatic', CURRENT_TIMESTAMP)
       ON CONFLICT(student_id, date) DO UPDATE SET
         total_solved = excluded.total_solved,
         easy_solved = excluded.easy_solved,
@@ -106,8 +107,6 @@ async function processStudent(studentId, profileUrl, db) {
         contest_total = excluded.contest_total,
         contest_rating = excluded.contest_rating,
         global_ranking = excluded.global_ranking,
-        acceptance_rate = excluded.acceptance_rate,
-        total_submissions = excluded.total_submissions,
         data_source = 'automatic',
         fetched_at = CURRENT_TIMESTAMP
     `, [
@@ -115,8 +114,7 @@ async function processStudent(studentId, profileUrl, db) {
             data.total_solved, data.easy_solved, data.medium_solved, data.hard_solved,
             yesterdaySolved, todaySolved,
             data.contest_solved, data.contest_total,
-            data.contest_rating, data.global_ranking,
-            data.acceptance_rate || 0, data.total_submissions || 0
+            data.contest_rating, data.global_ranking
         ]);
 
         // Update contest stats if we have contest data
@@ -142,21 +140,11 @@ async function processStudent(studentId, profileUrl, db) {
             ]);
         }
 
-        if (data.username || data.badges || data.top_language || data.admin_tags) {
-            await db.run(`
-                UPDATE students 
-                SET leetcode_username = coalesce(?, leetcode_username),
-                    badges = coalesce(?, badges),
-                    top_language = coalesce(?, top_language),
-                    admin_tags = coalesce(?, admin_tags),
-                    fundamental_solved = coalesce(?, fundamental_solved),
-                    intermediate_solved = coalesce(?, intermediate_solved),
-                    advanced_solved = coalesce(?, advanced_solved),
-                    language_stats = coalesce(?, language_stats),
-                    recent_submissions = coalesce(?, recent_submissions),
-                    updated_at = CURRENT_TIMESTAMP 
-                WHERE id = ?`,
-                [data.username || null, data.badges || null, data.top_language || null, data.admin_tags || null, data.fundamental_solved, data.intermediate_solved, data.advanced_solved, data.language_stats, data.recent_submissions, studentId]
+        // Update the student's leetcode username and language stats
+        if (data.username || data.language_stats) {
+            await db.run(
+                `UPDATE students SET leetcode_username = coalesce(?, leetcode_username), language_stats = coalesce(?, language_stats), updated_at = CURRENT_TIMESTAMP WHERE id = ?`,
+                [data.username || null, data.language_stats || null, studentId]
             );
         }
 
@@ -213,10 +201,28 @@ router.post('/all', async (req, res) => {
 
     res.json({ success: true, message: `Starting refresh for ${students.length} students`, total: students.length });
 
-    const CONCURRENCY = 10;
-    const DELAY_BETWEEN_REQUESTS = 1000;
-
     (async () => {
+        // Fetch dynamic settings from DB
+        let concurrencySetting = 3;
+        let delaySetting = 2500;
+        try {
+            const settingsRows = await db.all('SELECT key, value FROM app_settings');
+            const settingsMap = {};
+            settingsRows.forEach(row => settingsMap[row.key] = row.value);
+            
+            if (settingsMap['refresh_concurrency']) {
+                concurrencySetting = parseInt(settingsMap['refresh_concurrency'], 10) || 3;
+            }
+            if (settingsMap['refresh_delay_ms']) {
+                delaySetting = parseInt(settingsMap['refresh_delay_ms'], 10) || 2500;
+            }
+        } catch (err) {
+            console.error("Failed to load settings for refresh, using defaults.");
+        }
+
+        const CONCURRENCY = concurrencySetting;
+        const DELAY_BETWEEN_REQUESTS = delaySetting;
+
         for (let i = 0; i < students.length; i += CONCURRENCY) {
             if (!refreshState.isRunning) break;
 

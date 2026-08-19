@@ -103,6 +103,12 @@ export const fixUrls = (formData) =>
 export const getAuditLogs = () =>
     axios.get(`${API_BASE}/audit`).then(r => r.data);
 
+export const deleteAuditLog = (id) =>
+    axios.delete(`${API_BASE}/audit/${id}`).then(r => r.data);
+
+export const clearAuditLogs = () =>
+    axios.delete(`${API_BASE}/audit`).then(r => r.data);
+
 // ---- Contest Intervals ----
 export const getContestIntervalLists = () =>
     axios.get(`${API_BASE}/reports/contest-intervals/list`).then(r => r.data);
