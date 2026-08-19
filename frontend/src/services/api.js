@@ -93,8 +93,9 @@ export const getFetchErrors = () =>
 export const clearAllFetchErrors = () =>
     axios.delete(`${API_BASE}/reports/fetch-errors`).then(r => r.data);
 
-export const exportErrorsExcel = () =>
-    `${API_BASE}/reports/export-errors-excel`;
+export const exportErrorsExcel = () => {
+    window.open(`${API_BASE}/reports/export-errors-excel`, '_blank');
+};
 
 export const fixUrls = (formData) =>
     axios.post(`${API_BASE}/import/fix-urls`, formData, { headers: { 'Content-Type': 'multipart/form-data' } }).then(r => r.data);
