@@ -247,6 +247,16 @@ async function fetchStudentData(profileUrl) {
         profile {
           ranking
         }
+        activeBadge {
+          displayName
+          icon
+        }
+        badges {
+          id
+          displayName
+          icon
+          creationDate
+        }
       }
       userContestRanking(username: $username) {
         rating
@@ -342,7 +352,7 @@ async function fetchStudentData(profileUrl) {
       latest_contest: latestContest,
       contest_history: contestHistory.slice(0, 20),
       language_stats,
-      badges: contestRanking?.badge?.name || null
+      badges: user.activeBadge?.displayName || (user.badges && user.badges.length > 0 ? user.badges[user.badges.length - 1].displayName : null)
     };
   });
 }

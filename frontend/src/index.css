@@ -799,7 +799,7 @@ tbody td {
   position: sticky;
   right: 0;
   background: var(--color-brand);
-  z-index: 2;
+  z-index: 3;
   border-left: 1px solid rgba(255, 255, 255, 0.1);
   box-shadow: -2px 0 5px rgba(0,0,0,0.05);
 }
@@ -814,7 +814,28 @@ tbody td {
 }
 
 tbody tr:hover .actions-col-td {
-  background: #f8fafc; /* match hover row color */
+  background: rgba(0,0,0,0.025);
+}
+
+/* Sticky left columns — Name stays visible while scrolling right */
+.sticky-name-th {
+  position: sticky;
+  left: 0;
+  background: var(--color-brand);
+  z-index: 3;
+  box-shadow: 2px 0 5px rgba(0,0,0,0.08);
+}
+
+.sticky-name-td {
+  position: sticky;
+  left: 0;
+  background: var(--color-bg-card);
+  z-index: 1;
+  box-shadow: 2px 0 5px rgba(0,0,0,0.04);
+}
+
+tbody tr:hover .sticky-name-td {
+  background: rgba(0,0,0,0.025);
 }
 
 .td-rank {

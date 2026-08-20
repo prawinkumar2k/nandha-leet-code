@@ -223,7 +223,13 @@ export default function Students() {
                             {cols.map(col => (
                                 <th
                                     key={col.key}
-                                    className={`${sortBy === col.key ? 'sorted' : ''} ${col.key === 'actions' ? 'actions-col-th' : ''}`}
+                                    className={`${
+                                        sortBy === col.key ? 'sorted' : ''
+                                    } ${
+                                        col.key === 'actions' ? 'actions-col-th' : ''
+                                    } ${
+                                        col.key === 'name' ? 'sticky-name-th' : ''
+                                    }`}
                                     onClick={() => col.sortable && handleSort(col.key)}
                                     style={{ cursor: col.sortable ? 'pointer' : 'default' }}
                                 >
@@ -279,7 +285,7 @@ export default function Students() {
                                             <span className="td-reg">{s.reg_no}</span>
                                         )}
                                     </td>
-                                    <td>
+                                    <td className="sticky-name-td">
                                         <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                                             <span className="td-name">{s.name}</span>
                                             {s.admin_tags && (
@@ -314,7 +320,10 @@ export default function Students() {
                                         </div>
                                     </td>
                                     <td>
-                                        <span className="badge badge-purple">{s.badges || '—'}</span>
+                                        {s.badges
+                                            ? <span style={{ fontSize: 11, padding: '3px 8px', background: 'linear-gradient(135deg, rgba(139,92,246,0.15), rgba(168,85,247,0.2))', color: 'var(--color-purple)', border: '1px solid rgba(139,92,246,0.3)', borderRadius: 99, fontWeight: 600, whiteSpace: 'nowrap' }}>🏅 {s.badges}</span>
+                                            : <span style={{ color: 'var(--color-text-muted)', fontSize: 12 }}>—</span>
+                                        }
                                     </td>
                                     <td style={{ fontFamily: 'var(--font-mono)', fontWeight: 800, color: 'var(--color-text-primary)' }}>
                                         {(s.total_solved || 0).toLocaleString()}
