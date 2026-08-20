@@ -746,7 +746,7 @@ body {
 table {
   width: 100%;
   border-collapse: collapse;
-  min-width: 900px;
+  min-width: 1200px;
 }
 
 thead th {
@@ -1661,6 +1661,7 @@ tbody tr:hover .actions-col-td {
 }
 
 /* ========================================
+
    Responsive Media Queries
    ======================================== */
 
