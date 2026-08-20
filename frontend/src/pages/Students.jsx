@@ -141,7 +141,9 @@ export default function Students() {
         { key: 'department', label: 'Department', sortable: false },
         { key: 'batch', label: 'Batch', sortable: false },
         { key: 'languages', label: 'Languages', sortable: false },
+        { key: 'badges', label: 'Badge', sortable: false },
         { key: 'total_solved', label: 'Total', sortable: true },
+        { key: 'needed', label: 'Needed', sortable: false },
         { key: 'easy_solved', label: 'Easy', sortable: true },
         { key: 'medium_solved', label: 'Medium', sortable: true },
         { key: 'hard_solved', label: 'Hard', sortable: true },
@@ -311,7 +313,15 @@ export default function Students() {
                                             })()}
                                         </div>
                                     </td>
-                                    <td style={{ fontFamily: 'var(--font-mono)', fontWeight: 700 }}>{(s.total_solved || 0).toLocaleString()}</td>
+                                    <td>
+                                        <span className="badge badge-purple">{s.badges || '—'}</span>
+                                    </td>
+                                    <td style={{ fontFamily: 'var(--font-mono)', fontWeight: 800, color: 'var(--color-text-primary)' }}>
+                                        {(s.total_solved || 0).toLocaleString()}
+                                    </td>
+                                    <td style={{ fontFamily: 'var(--font-mono)', fontWeight: 600, color: 'var(--color-hard)' }}>
+                                        {Math.max(0, 200 - (s.total_solved || 0))}
+                                    </td>
                                     <td><span className="td-easy">{s.easy_solved || 0}</span></td>
                                     <td><span className="td-medium">{s.medium_solved || 0}</span></td>
                                     <td><span className="td-hard">{s.hard_solved || 0}</span></td>

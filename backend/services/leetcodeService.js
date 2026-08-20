@@ -252,6 +252,7 @@ async function fetchStudentData(profileUrl) {
         rating
         globalRanking
         attendedContestsCount
+        badge { name }
       }
       userContestRankingHistory(username: $username) {
         attended
@@ -340,7 +341,8 @@ async function fetchStudentData(profileUrl) {
       contest_total: latestContest.total,
       latest_contest: latestContest,
       contest_history: contestHistory.slice(0, 20),
-      language_stats
+      language_stats,
+      badges: contestRanking?.badge?.name || null
     };
   });
 }

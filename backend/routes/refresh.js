@@ -140,11 +140,11 @@ async function processStudent(studentId, profileUrl, db) {
             ]);
         }
 
-        // Update the student's leetcode username and language stats
-        if (data.username || data.language_stats) {
+        // Update the student's leetcode username, language stats, and badges
+        if (data.username || data.language_stats || data.badges) {
             await db.run(
-                `UPDATE students SET leetcode_username = coalesce(?, leetcode_username), language_stats = coalesce(?, language_stats), updated_at = CURRENT_TIMESTAMP WHERE id = ?`,
-                [data.username || null, data.language_stats || null, studentId]
+                `UPDATE students SET leetcode_username = coalesce(?, leetcode_username), language_stats = coalesce(?, language_stats), badges = coalesce(?, badges), updated_at = CURRENT_TIMESTAMP WHERE id = ?`,
+                [data.username || null, data.language_stats || null, data.badges || null, studentId]
             );
         }
 
