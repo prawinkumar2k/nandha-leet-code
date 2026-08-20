@@ -247,14 +247,8 @@ async function fetchStudentData(profileUrl) {
         profile {
           ranking
         }
-        activeBadge {
-          displayName
-          icon
-        }
         badges {
-          id
           displayName
-          icon
           creationDate
         }
       }
@@ -352,7 +346,18 @@ async function fetchStudentData(profileUrl) {
       latest_contest: latestContest,
       contest_history: contestHistory.slice(0, 20),
       language_stats,
-      badges: user.activeBadge?.displayName || (user.badges && user.badges.length > 0 ? user.badges[user.badges.length - 1].displayName : null)
+      // Most recent activity badge (sorted by creationDate desc)
+      badges: (() => {
+        const userBadges = user.badges || [];
+        if (!userBadges.length) return null;
+        // Sort by creationDate desc and return most recent badge name
+        const sorted = [...userBadges].sort((a, b) => {
+          const aDate = a.creationDate ? new Date(a.creationDate).getTime() : 0;
+          const bDate = b.creationDate ? new Date(b.creationDate).getTime() : 0;
+          return bDate - aDate;
+        });
+        return sorted[0]?.displayName || null;
+      })()
     };
   });
 }

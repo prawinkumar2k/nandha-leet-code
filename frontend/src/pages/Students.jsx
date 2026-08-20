@@ -138,8 +138,6 @@ export default function Students() {
         { key: 'rank', label: 'Rank', sortable: false },
         { key: 'reg_no', label: 'Register No', sortable: true },
         { key: 'name', label: 'Student Name', sortable: true },
-        { key: 'department', label: 'Department', sortable: false },
-        { key: 'batch', label: 'Batch', sortable: false },
         { key: 'languages', label: 'Languages', sortable: false },
         { key: 'badges', label: 'Badge', sortable: false },
         { key: 'total_solved', label: 'Total', sortable: true },
@@ -223,13 +221,7 @@ export default function Students() {
                             {cols.map(col => (
                                 <th
                                     key={col.key}
-                                    className={`${
-                                        sortBy === col.key ? 'sorted' : ''
-                                    } ${
-                                        col.key === 'actions' ? 'actions-col-th' : ''
-                                    } ${
-                                        col.key === 'name' ? 'sticky-name-th' : ''
-                                    }`}
+                                    className={`${sortBy === col.key ? 'sorted' : ''} ${col.key === 'actions' ? 'actions-col-th' : ''}`}
                                     onClick={() => col.sortable && handleSort(col.key)}
                                     style={{ cursor: col.sortable ? 'pointer' : 'default' }}
                                 >
@@ -285,22 +277,19 @@ export default function Students() {
                                             <span className="td-reg">{s.reg_no}</span>
                                         )}
                                     </td>
-                                    <td className="sticky-name-td">
-                                        <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                                    <td>
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: 4, minWidth: 160 }}>
                                             <span className="td-name">{s.name}</span>
-                                            {s.admin_tags && (
-                                                <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
-                                                    {s.admin_tags.split(',').map(t => t.trim()).filter(Boolean).map(tag => (
-                                                        <span key={tag} style={{ fontSize: 9, padding: '2px 6px', backgroundColor: 'rgba(59,130,246,0.2)', color: '#60a5fa', border: '1px solid rgba(59,130,246,0.3)', borderRadius: 4, fontWeight: 500 }}>
-                                                            {tag}
-                                                        </span>
-                                                    ))}
-                                                </div>
-                                            )}
+                                            <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', alignItems: 'center' }}>
+                                                {s.department && <span className="td-dept">{s.department}</span>}
+                                                {s.batch && <span className="td-dept" style={{ color: 'var(--color-purple)', background: 'var(--color-purple-bg)' }}>{s.batch}</span>}
+                                                {s.admin_tags && s.admin_tags.split(',').map(t => t.trim()).filter(Boolean).map(tag => (
+                                                    <span key={tag} style={{ fontSize: 9, padding: '2px 6px', backgroundColor: 'rgba(59,130,246,0.2)', color: '#60a5fa', border: '1px solid rgba(59,130,246,0.3)', borderRadius: 4, fontWeight: 500 }}>{tag}</span>
+                                                ))}
+                                            </div>
                                         </div>
                                     </td>
-                                    <td><span className="td-dept">{s.department || '—'}</span></td>
-                                    <td><span className="td-dept" style={{ color: 'var(--color-purple)' }}>{s.batch || '—'}</span></td>
+
                                     <td>
                                         <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', minWidth: 120 }}>
                                             {(() => {
