@@ -51,10 +51,11 @@
             "backend/**/*",
             "frontend/dist/**/*",
             "node_modules/**/*",
-            "package.json"
+            "package.json",
+            "icon.ico"
         ],
         "win": {
-            "icon": "icon.ico",
+            "icon": "frontend/public/logo.png",
             "target": [
                 {
                     "target": "portable",

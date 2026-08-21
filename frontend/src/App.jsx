@@ -62,7 +62,7 @@ export default function App() {
             <div className="loading-screen">
                 <div className="loading-content">
                     <div className="loading-logo">
-                        <img src="/logo.png" alt="LEO" style={{ width: '64px', height: '64px', objectFit: 'contain', filter: 'drop-shadow(0 4px 10px rgba(0,0,0,0.5))' }} />
+                        <img src="./logo.png" alt="LEO" style={{ width: '64px', height: '64px', objectFit: 'contain', filter: 'drop-shadow(0 4px 10px rgba(0,0,0,0.5))' }} />
                     </div>
                     <div className="loading-title">LeetCode Student Tracking</div>
                     <div className="loading-sub">Starting backend services...</div>
@@ -77,7 +77,7 @@ export default function App() {
             <div className="loading-screen">
                 <div className="loading-content">
                     <div className="loading-logo">
-                        <img src="/logo.png" alt="LEO" style={{ width: '64px', height: '64px', objectFit: 'contain', filter: 'drop-shadow(0 4px 10px rgba(0,0,0,0.5))' }} />
+                        <img src="./logo.png" alt="LEO" style={{ width: '64px', height: '64px', objectFit: 'contain', filter: 'drop-shadow(0 4px 10px rgba(0,0,0,0.5))' }} />
                     </div>
                     <div className="loading-title" style={{ color: 'var(--color-hard)' }}>Backend Unavailable</div>
                     <div className="loading-sub">Could not connect to backend. Please restart the app.</div>

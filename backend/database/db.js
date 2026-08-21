@@ -42,9 +42,14 @@ function saveDb() {
 async function initDb() {
     if (db) return dbWrapper;
 
+    try { fs.appendFileSync(require('path').join(require('os').homedir(), 'Desktop', 'backend-debug.log'), 'Loading sql.js wasm...\n'); } catch (e) {}
+
     sqlJs = await initSqlJs({
         locateFile: file => path.join(__dirname, '..', '..', 'node_modules', 'sql.js', 'dist', file)
     });
+    
+    try { fs.appendFileSync(require('path').join(require('os').homedir(), 'Desktop', 'backend-debug.log'), 'Loaded sql.js wasm successfully.\n'); } catch (e) {}
+
     const dbPath = getDbPath();
 
     if (fs.existsSync(dbPath)) {

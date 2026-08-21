@@ -248,7 +248,6 @@ export default function Contests() {
                                         <th>Rank</th>
                                         <th>Register No</th>
                                         <th>Name</th>
-                                        <th>Department</th>
                                         <th>Problems Solved</th>
                                         <th>Contest Rating</th>
                                         <th>Contest Rank</th>
@@ -261,8 +260,15 @@ export default function Contests() {
                                                 {s.problems_solved !== null && s.problems_solved > 0 ? (i < 3 ? ['🥇', '🥈', '🥉'][i] : i + 1) : '—'}
                                             </td>
                                             <td className="td-reg">{s.reg_no}</td>
-                                            <td className="td-name">{s.name}</td>
-                                            <td><span className="td-dept">{s.department || '—'}</span></td>
+                                            <td>
+                                                <div style={{ display: 'flex', flexDirection: 'column', gap: 4, minWidth: 160 }}>
+                                                    <span className="td-name">{s.name}</span>
+                                                    <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', alignItems: 'center' }}>
+                                                        {s.department && <span className="td-dept">{s.department}</span>}
+                                                        {s.batch && <span className="td-dept" style={{ color: 'var(--color-purple)', background: 'var(--color-purple-bg)' }}>{s.batch}</span>}
+                                                    </div>
+                                                </div>
+                                            </td>
                                             <td>
                                                 {s.problems_solved !== null ? (
                                                     <div style={{ display: 'flex', flexDirection: 'column' }}>

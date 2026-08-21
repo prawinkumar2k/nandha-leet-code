@@ -1,6 +1,33 @@
 const express = require('express');
 const router = express.Router();
 const { getDb } = require('../database/db');
+const axios = require('axios');
+
+let cachedLatestContests = null;
+let lastCacheTime = 0;
+
+async function getGlobalLatestContests() {
+    if (cachedLatestContests && (Date.now() - lastCacheTime < 3600000)) { // 1 hour cache
+        return cachedLatestContests;
+    }
+    try {
+        const response = await axios.post('https://leetcode.com/graphql', {
+            query: `query { pastContests(pageNo: 1, numPerPage: 5) { data { title startTime } } }`
+        }, { timeout: 8000 });
+        const past = response.data?.data?.pastContests?.data || [];
+        const weekly = past.find(c => c.title.includes('Weekly') && !c.title.includes('Biweekly'));
+        const biweekly = past.find(c => c.title.includes('Biweekly'));
+        
+        cachedLatestContests = {
+            weekly: weekly ? { contest_name: weekly.title, contest_date: new Date(weekly.startTime * 1000).toISOString().split('T')[0] } : null,
+            biweekly: biweekly ? { contest_name: biweekly.title, contest_date: new Date(biweekly.startTime * 1000).toISOString().split('T')[0] } : null
+        };
+        lastCacheTime = Date.now();
+        return cachedLatestContests;
+    } catch (e) {
+        return null;
+    }
+}
 
 router.get('/', async (req, res) => {
     try {
@@ -89,17 +116,33 @@ router.get('/latest', async (req, res) => {
             `, params);
         };
 
-        const weeklySummary = dbLatestWeekly ? await getSummary(dbLatestWeekly.contest_name) : [];
-        const biweeklySummary = dbLatestBiweekly ? await getSummary(dbLatestBiweekly.contest_name) : [];
+        let globalLatest = await getGlobalLatestContests();
+
+        let resolvedWeekly = dbLatestWeekly;
+        if (globalLatest && globalLatest.weekly) {
+            if (!date || new Date(globalLatest.weekly.contest_date) <= new Date(date)) {
+                resolvedWeekly = globalLatest.weekly;
+            }
+        }
+
+        let resolvedBiweekly = dbLatestBiweekly;
+        if (globalLatest && globalLatest.biweekly) {
+            if (!date || new Date(globalLatest.biweekly.contest_date) <= new Date(date)) {
+                resolvedBiweekly = globalLatest.biweekly;
+            }
+        }
+
+        const weeklySummary = resolvedWeekly ? await getSummary(resolvedWeekly.contest_name) : [];
+        const biweeklySummary = resolvedBiweekly ? await getSummary(resolvedBiweekly.contest_name) : [];
 
         res.json({
             success: true,
             weekly: {
-                contest: dbLatestWeekly ? { contest_name: dbLatestWeekly.contest_name, contest_date: dbLatestWeekly.contest_date } : null,
+                contest: resolvedWeekly,
                 data: weeklySummary
             },
             biweekly: {
-                contest: dbLatestBiweekly ? { contest_name: dbLatestBiweekly.contest_name, contest_date: dbLatestBiweekly.contest_date } : null,
+                contest: resolvedBiweekly,
                 data: biweeklySummary
             }
         });
@@ -110,7 +153,6 @@ router.get('/latest', async (req, res) => {
 
 router.get('/upcoming', async (req, res) => {
     try {
-        const axios = require('axios');
         const query = `
         query upcomingContests {
           upcomingContests {
