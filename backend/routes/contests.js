@@ -117,21 +117,8 @@ router.get('/latest', async (req, res) => {
             `, params);
         };
 
-        let globalLatest = await getGlobalLatestContests();
-
-        let resolvedWeekly = dbLatestWeekly;
-        if (globalLatest && globalLatest.weekly) {
-            if (!date || new Date(globalLatest.weekly.contest_date) <= new Date(date)) {
-                resolvedWeekly = globalLatest.weekly;
-            }
-        }
-
-        let resolvedBiweekly = dbLatestBiweekly;
-        if (globalLatest && globalLatest.biweekly) {
-            if (!date || new Date(globalLatest.biweekly.contest_date) <= new Date(date)) {
-                resolvedBiweekly = globalLatest.biweekly;
-            }
-        }
+        const resolvedWeekly = dbLatestWeekly;
+        const resolvedBiweekly = dbLatestBiweekly;
 
         const weeklySummary = resolvedWeekly ? await getSummary(resolvedWeekly.contest_name) : [];
         const biweeklySummary = resolvedBiweekly ? await getSummary(resolvedBiweekly.contest_name) : [];
