@@ -104,6 +104,7 @@ router.get('/latest', async (req, res) => {
                 s.reg_no,
                 s.name,
                 s.department,
+                s.batch,
                 cs.problems_solved,
                 cs.contest_total,
                 cs.contest_rating,
