@@ -1,9 +1,0 @@
-node_modules/
-release/
-data/
-*.exe
-*.zip
-*.db
-.env
-.idea/
-.vscode/
