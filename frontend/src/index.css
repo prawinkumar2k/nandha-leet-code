@@ -137,6 +137,11 @@ body {
   background: var(--color-border-light);
 }
 
+.app-content > div {
+  width: 100%;
+  max-width: 100%;
+}
+
 .loading-screen {
   position: fixed;
   inset: 0;
@@ -728,6 +733,7 @@ body {
   overflow-x: auto;
   border-radius: var(--radius-lg);
   border: 1px solid var(--color-border);
+  width: 100%;
 }
 
 .table-wrapper::-webkit-scrollbar {
@@ -772,6 +778,10 @@ thead th:hover {
 thead th.sorted {
   color: #fbbf24;
   /* highlight in an amber/yellow tone when sorted so it stands out */
+}
+
+.actions-col-th {
+  min-width: 170px;
 }
 
 tbody tr {
